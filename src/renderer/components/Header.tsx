@@ -19,7 +19,7 @@ const Header = ({ activeCount, appInfo }: HeaderProps) => (
       </span>
       <span className={appInfo?.shortcutRegistered ? "pill pill-ok" : "pill pill-warn"}>
         <Command size={14} />
-        {appInfo?.shortcutRegistered ? "Shortcut" : "No shortcut"}
+        {appInfo?.shortcutRegistered ? "Cmd Opt Space" : "No shortcut"}
       </span>
     </div>
   </header>

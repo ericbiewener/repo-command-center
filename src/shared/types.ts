@@ -34,6 +34,21 @@ export type StatusPathInfo = {
   statusFilePath: string;
 };
 
+export type PersistedStatusRecord = {
+  schema_version: 1;
+  workstream_id: string;
+  repo_name: string;
+  repo_path: string;
+  branch: string;
+  agent: StatusUpdatePayload["agent"];
+  status: StatusUpdatePayload["status"];
+  updated_at: string;
+  body_markdown: string;
+  title?: string;
+  summary?: string;
+  priority?: StatusUpdatePayload["priority"];
+};
+
 export type WorkstreamStatus =
   | "running"
   | "blocked"

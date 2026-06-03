@@ -21,5 +21,6 @@ describe("status path", () => {
     expect(pathInfo.branchKey).toBe("ai-dev-resource-spike");
     expect(pathInfo.workstreamId).toBe("figma-service__ai-dev-resource-spike");
     expect(pathInfo.statusFilePath).toContain("/.ai-work-status/repos/figma-service--");
+    expect(pathInfo.statusFilePath).toMatch(/branches\/ai-dev-resource-spike\.json$/);
   });
 });

@@ -13,31 +13,27 @@ describe("listWorkstreams", () => {
 
     await fs.mkdir(repoDir, { recursive: true });
     await fs.writeFile(
-      path.join(repoDir, "main.md"),
-      `---
-workstream_id: repo__main
-repo_name: repo
-repo_path: ${root}
-branch: main
-agent: codex
-status: running
-updated_at: 2026-05-31T18:22:10.000Z
----
-
-## Current goal
-
-Build it.
-`,
+      path.join(repoDir, "main.json"),
+      JSON.stringify(
+        {
+          schema_version: 1,
+          workstream_id: "repo__main",
+          repo_name: "repo",
+          repo_path: root,
+          branch: "main",
+          agent: "codex",
+          status: "running",
+          updated_at: "2026-05-31T18:22:10.000Z",
+          body_markdown: "## Current goal\n\nBuild it.",
+        },
+        null,
+        2,
+      ),
       "utf8",
     );
     await fs.writeFile(
-      path.join(repoDir, "bad.md"),
-      `---
-repo_name: broken
----
-
-Missing fields.
-`,
+      path.join(repoDir, "bad.json"),
+      JSON.stringify({ schema_version: 1, repo_name: "broken" }, null, 2),
       "utf8",
     );
 

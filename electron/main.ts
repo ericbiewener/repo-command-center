@@ -11,6 +11,9 @@ let tray: Tray | null = null;
 let shortcutRegistered = false;
 let localApiInfo: ServerInfo | null = null;
 let closeLocalApi: (() => Promise<void>) | null = null;
+let lastBlurHideAt = 0;
+
+const isDevelopment = Boolean(process.env.ELECTRON_RENDERER_URL);
 
 const refreshWorkstreams = () => {
   dashboardWindow?.webContents.send("workstreams:updated");
@@ -19,16 +22,23 @@ const refreshWorkstreams = () => {
 const showDashboard = () => {
   dashboardWindow?.show();
   dashboardWindow?.focus();
-  dashboardWindow?.webContents.send("dashboard:shown");
 };
 
 const createAndShowDashboard = () => {
-  dashboardWindow = createDashboardWindow();
+  dashboardWindow = createDashboardWindow({
+    onBlurHide: () => {
+      lastBlurHideAt = Date.now();
+    },
+  });
   showDashboard();
 };
 
 const toggleDashboard = () => {
-  dashboardWindow?.isVisible() ? dashboardWindow.hide() : showDashboard();
+  dashboardWindow?.isVisible()
+    ? dashboardWindow.hide()
+    : Date.now() - lastBlurHideAt > 300
+      ? showDashboard()
+      : undefined;
 };
 
 const getAppInfo = () => ({
@@ -45,11 +55,18 @@ const getAppInfo = () => ({
 });
 
 app.whenReady().then(async () => {
-  app.dock?.hide();
+  if (!isDevelopment) {
+    app.dock?.hide();
+  }
 
-  dashboardWindow = createDashboardWindow();
+  dashboardWindow = createDashboardWindow({
+    onBlurHide: () => {
+      lastBlurHideAt = Date.now();
+    },
+    showOnReady: isDevelopment,
+  });
   tray = createTray(toggleDashboard, refreshWorkstreams);
-  shortcutRegistered = globalShortcut.register("CommandOrControl+Alt+Space", toggleDashboard);
+  shortcutRegistered = globalShortcut.register("CommandOrControl+Alt+Space", showDashboard);
 
   if (!shortcutRegistered) {
     console.warn("Could not register global shortcut CommandOrControl+Alt+Space.");
@@ -64,6 +81,14 @@ app.whenReady().then(async () => {
     .then((server) => {
       localApiInfo = server.info;
       closeLocalApi = server.close;
+      console.log(
+        `AI Work Command Center running. Local API: http://127.0.0.1:${server.info.port}`,
+      );
+      console.log(
+        isDevelopment
+          ? "Development mode: dashboard opens automatically. Use the tray icon to toggle it or Command+Option+Space to show it."
+          : "Use the tray icon to toggle the dashboard or Command+Option+Space to show it.",
+      );
     })
     .catch((error: unknown) => {
       console.error("Could not start local API server.", error);

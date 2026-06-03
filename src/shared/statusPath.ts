@@ -16,7 +16,7 @@ export const computeStatusPath = (repoInfo: RepoInfo): StatusPathInfo => {
   const repoKey = `${slug(repoInfo.repoName)}--${hash(repoInfo.repoIdSource)}`;
   const branchKey = slug(repoInfo.branch);
   const workstreamId = `${slug(repoInfo.repoName)}__${branchKey}`;
-  const statusFilePath = path.join(getStatusReposDir(), repoKey, "branches", `${branchKey}.md`);
+  const statusFilePath = path.join(getStatusReposDir(), repoKey, "branches", `${branchKey}.json`);
 
   return {
     repoKey,

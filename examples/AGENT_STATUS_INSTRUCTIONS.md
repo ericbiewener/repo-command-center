@@ -92,6 +92,6 @@ Do not create status files inside the repository.
 
 Do not create `.local/status.md`.
 
-Do not manually construct YAML frontmatter.
+Do not manually construct status JSON.
 
 The CLI and app handle canonical storage.

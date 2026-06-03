@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getRepoInfo } from "./gitInfo";
-import { renderStatusMarkdown } from "./renderStatusMarkdown";
+import { renderStatusJson } from "./renderStatusJson";
 import { computeStatusPath } from "./statusPath";
 import { validateStatusUpdatePayload } from "./statusSchema";
 
@@ -10,7 +10,7 @@ export const writeStatusFile = async (input: unknown) => {
   const repoInfo = await getRepoInfo(payload.repoPath);
   const pathInfo = computeStatusPath(repoInfo);
   const updatedAt = new Date().toISOString();
-  const markdown = renderStatusMarkdown({
+  const json = renderStatusJson({
     payload,
     repoInfo,
     pathInfo,
@@ -23,7 +23,7 @@ export const writeStatusFile = async (input: unknown) => {
   );
 
   await fs.mkdir(parentDir, { recursive: true });
-  await fs.writeFile(tempFilePath, markdown, "utf8");
+  await fs.writeFile(tempFilePath, json, "utf8");
   await fs.rename(tempFilePath, pathInfo.statusFilePath);
 
   return {

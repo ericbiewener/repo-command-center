@@ -1,11 +1,11 @@
 # AI Work Command Center
 
-A macOS Electron menu bar app for tracking active AI-assisted coding workstreams. Agents submit structured updates through the `ai-work-status` CLI, and the app renders durable Markdown status files from `~/.ai-work-status/`.
+A macOS Electron menu bar app for tracking active AI-assisted coding workstreams. Agents submit structured updates through the `ai-work-status` CLI, and the app renders durable JSON status files from `~/.ai-work-status/`.
 
 ## How It Works
 
 ```txt
-AI agent -> ai-work-status CLI -> Electron local API -> ~/.ai-work-status/repos/**/*.md -> dashboard
+AI agent -> ai-work-status CLI -> Electron local API -> ~/.ai-work-status/repos/**/*.json -> dashboard
 ```
 
 If the Electron app is not running, the CLI writes the same canonical Markdown file directly with the shared status writer.
@@ -22,7 +22,7 @@ pnpm install
 pnpm dev
 ```
 
-The app starts as a menu bar app. Click the menu bar icon or press `Command+Option+Space` to toggle the dashboard.
+The app starts as a menu bar app. Click the menu bar icon to toggle the dashboard, or press `Command+Option+Space` to show it.
 
 ## Build
 
@@ -36,7 +36,6 @@ pnpm build
 pnpm build:cli
 mkdir -p ~/bin
 cp dist/cli/ai-work-status.js ~/bin/ai-work-status
-chmod +x ~/bin/ai-work-status
 ```
 
 Ensure `~/bin` is on `PATH`.
@@ -92,10 +91,10 @@ Share [examples/AGENT_STATUS_INSTRUCTIONS.md](examples/AGENT_STATUS_INSTRUCTIONS
 Status files are written under:
 
 ```txt
-~/.ai-work-status/repos/<repo-key>/branches/<branch-key>.md
+~/.ai-work-status/repos/<repo-key>/branches/<branch-key>.json
 ```
 
-Each file contains generated YAML frontmatter and the submitted Markdown body.
+Each file contains generated JSON metadata and the submitted Markdown body as `body_markdown`.
 
 ## Local API
 
