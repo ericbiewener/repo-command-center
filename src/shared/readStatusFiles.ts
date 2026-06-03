@@ -12,7 +12,6 @@ const requiredFields = [
   "agent",
   "status",
   "updatedAt",
-  "nextRecommendedAction",
 ];
 
 const stringValue = (value: unknown) =>
@@ -46,7 +45,6 @@ const invalidWorkstream = (statusFilePath: string, validationErrors: string[]): 
   agent: "unknown",
   status: "invalid",
   rawStatus: "",
-  nextRecommendedAction: "",
   updatedAt: "",
   updatedAtEpoch: null,
   statusFilePath,
@@ -92,7 +90,6 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
           id: stringValue(data.workstreamId),
           title: stringValue(data.title) || undefined,
           summary: stringValue(data.summary) || undefined,
-          nextRecommendedAction: stringValue(data.nextRecommendedAction),
           repoName: stringValue(data.repoName),
           repoPath: stringValue(data.repoPath),
           repoRemote: stringValue(data.repoRemote),

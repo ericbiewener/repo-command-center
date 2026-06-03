@@ -1,6 +1,6 @@
-import { ExternalLink, FileWarning, Folder, GitBranch } from "lucide-react";
+import { FileWarning } from "lucide-react";
 import type { Workstream } from "../../shared/types";
-import { formatAbsoluteDate, formatRelativeTime } from "../utils/formatDate";
+import vscodeLogo from "../vscode.svg";
 
 type WorkstreamCardProps = {
   workstream: Workstream;
@@ -16,37 +16,21 @@ const WorkstreamCard = ({ workstream, onOpenRepo }: WorkstreamCardProps) => {
 
   return (
     <article className={`workstream-card status-${workstream.status}`}>
-      <div className="card-meta">
-        <span className={`badge badge-${workstream.status}`}>
-          {workstream.status.replaceAll("_", " ")}
-        </span>
-        <span className="badge badge-neutral">{workstream.agent}</span>
-        <time title={formatAbsoluteDate(workstream.updatedAt)}>
-          {formatRelativeTime(workstream.updatedAtEpoch)}
-        </time>
+      <div className="card-title">
+        <h3>{title}</h3>
+        <button
+          disabled={!workstream.repoPath}
+          type="button"
+          title="Open repo in VS Code"
+          onClick={() => onOpenRepo(workstream.repoPath)}
+        >
+          <img src={vscodeLogo} alt="VS Code" className="vscode-icon" />
+        </button>
       </div>
 
-      <h3>{title}</h3>
       {workstream.summary ? <p className="summary">{workstream.summary}</p> : null}
-      {workstream.nextRecommendedAction ? (
-        <div className="next-action">
-          <span>Next</span>
-          <p>{workstream.nextRecommendedAction}</p>
-        </div>
-      ) : null}
 
-      {workstream.isValid ? (
-        <div className="repo-lines">
-          <span>
-            <Folder size={14} />
-            {workstream.repoName}
-          </span>
-          <span>
-            <GitBranch size={14} />
-            {workstream.branch}
-          </span>
-        </div>
-      ) : (
+      {!workstream.isValid && (
         <div className="invalid-details">
           <FileWarning size={16} />
           <div>
@@ -57,19 +41,6 @@ const WorkstreamCard = ({ workstream, onOpenRepo }: WorkstreamCardProps) => {
           </div>
         </div>
       )}
-
-      <div className="card-footer">
-        <span title={workstream.repoPath}>{workstream.repoPath || workstream.statusFilePath}</span>
-        <button
-          disabled={!workstream.repoPath}
-          type="button"
-          title="Open repo in VS Code"
-          onClick={() => onOpenRepo(workstream.repoPath)}
-        >
-          <ExternalLink size={15} />
-          VS Code
-        </button>
-      </div>
     </article>
   );
 };

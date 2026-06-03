@@ -7,7 +7,6 @@ export const statusUpdateSchema = z
     agent: z.enum(agentKinds),
     title: z.string().trim().min(1).optional(),
     summary: z.string().trim().min(1).optional(),
-    nextRecommendedAction: z.string().trim().min(1, "nextRecommendedAction is required"),
   })
   .strict();
 

@@ -11,16 +11,11 @@ const {
   agent,
   title,
   summary,
-  nextRecommendedAction,
 } = yargsInit({
   repo: { type: "string", description: "Repository path", default: "." },
   agent: { type: "string", description: "Agent kind: claude, codex, or other" },
   title: { type: "string", description: "Display title" },
   summary: { type: "string", description: "One-line summary" },
-  nextRecommendedAction: {
-    type: "string",
-    description: "One specific next action for the user",
-  },
 })
   .command("update", "Create or update a workstream status file.")
   .demandCommand(1, "Specify a command (e.g. update)")
@@ -35,7 +30,6 @@ const readPayload = () => {
     agent,
     title,
     summary,
-    nextRecommendedAction,
   };
 
   return validateStatusUpdatePayload(payload);

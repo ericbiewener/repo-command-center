@@ -7,16 +7,10 @@ type StatusGroupProps = {
   onOpenRepo: (repoPath: string) => void;
 };
 
-const formatItemCount = (count: number) => `${count} ${count === 1 ? "item" : "items"}`;
-
 const StatusGroup = ({ group, onOpenRepo }: StatusGroupProps) => (
   <section className="repo-section" id={`repo-section-${group.repoKey}`}>
     <div className="repo-heading">
-      <h2>
-        <Folder size={15} />
-        {group.repoName}
-      </h2>
-      <span>{formatItemCount(group.items.length)}</span>
+      <h2>{group.repoName}</h2>
     </div>
     <div className="branch-list">
       {group.branches.map((branchGroup) => (
@@ -27,10 +21,9 @@ const StatusGroup = ({ group, onOpenRepo }: StatusGroupProps) => (
         >
           <div className="branch-heading">
             <h3>
-              <GitBranch size={14} />
-              {branchGroup.branch}
+              <GitBranch size={20} />
+              <div>{branchGroup.branch}</div>
             </h3>
-            <span>{formatItemCount(branchGroup.items.length)}</span>
           </div>
           <div className="card-list">
             {branchGroup.items.map((workstream) => (

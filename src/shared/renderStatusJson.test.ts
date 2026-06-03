@@ -3,13 +3,12 @@ import { renderStatusJson } from "./renderStatusJson";
 import type { PersistedStatusRecord, RepoInfo, StatusPathInfo, StatusUpdatePayload } from "./types";
 
 describe("renderStatusJson", () => {
-  test("renders generated JSON status data and next recommended action", () => {
+  test("renders generated JSON status data", () => {
     const payload: StatusUpdatePayload = {
       repoPath: ".",
       agent: "codex",
       title: "Initial implementation",
       summary: "Building v1",
-      nextRecommendedAction: "Review the dashboard cards.",
     };
     const repoInfo: RepoInfo = {
       repoRoot: "/tmp/repo",
@@ -37,7 +36,6 @@ describe("renderStatusJson", () => {
     expect(record.agent).toBe("codex");
     expect(record.status).toBe("done");
     expect(record.repoRemote).toBe("git@github.com:example/repo.git");
-    expect(record.nextRecommendedAction).toBe("Review the dashboard cards.");
     expect("schema_version" in record).toBe(false);
     expect("body_markdown" in record).toBe(false);
   });
