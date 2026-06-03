@@ -12,11 +12,11 @@ const makeWorkstream = (overrides: Partial<Workstream> = {}) =>
     agent: "codex",
     status: "running",
     rawStatus: "running",
+    nextRecommendedAction: "Review it.",
     updatedAt: "2026-06-03T16:48:22.866Z",
     updatedAtEpoch: 1_780_506_502_866,
     statusFilePath:
       "/Users/eric/.ai-work-status/repos/command-center--aaaaaaaaaa/branches/main.json",
-    markdownBody: "## Current goal\n\nFix it.",
     isValid: true,
     validationErrors: [],
     ...overrides,

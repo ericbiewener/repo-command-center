@@ -1,5 +1,4 @@
 import { ExternalLink, FileWarning, Folder, GitBranch } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 import type { Workstream } from "../../shared/types";
 import { formatAbsoluteDate, formatRelativeTime } from "../utils/formatDate";
 
@@ -29,6 +28,12 @@ const WorkstreamCard = ({ workstream, onOpenRepo }: WorkstreamCardProps) => {
 
       <h3>{title}</h3>
       {workstream.summary ? <p className="summary">{workstream.summary}</p> : null}
+      {workstream.nextRecommendedAction ? (
+        <div className="next-action">
+          <span>Next</span>
+          <p>{workstream.nextRecommendedAction}</p>
+        </div>
+      ) : null}
 
       {workstream.isValid ? (
         <div className="repo-lines">
@@ -52,12 +57,6 @@ const WorkstreamCard = ({ workstream, onOpenRepo }: WorkstreamCardProps) => {
           </div>
         </div>
       )}
-
-      {workstream.markdownBody ? (
-        <div className="markdown-body">
-          <ReactMarkdown>{workstream.markdownBody}</ReactMarkdown>
-        </div>
-      ) : null}
 
       <div className="card-footer">
         <span title={workstream.repoPath}>{workstream.repoPath || workstream.statusFilePath}</span>

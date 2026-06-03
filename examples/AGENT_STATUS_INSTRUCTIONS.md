@@ -11,53 +11,23 @@ Use the `ai-work-status` CLI.
 From inside the repository, run:
 
 ```bash
-cat <<'EOF' | ai-work-status update --repo . --agent claude --status running
-## Current goal
-
-Describe the current goal.
-
-## What changed
-
-Describe the important changes made.
-
-## Tests/checks run
-
-List tests, checks, or manual verification performed.
-
-## Known issues
-
-List blockers, risks, or unresolved questions.
-
-## Next recommended action
-
-Give Eric one specific next action.
-EOF
+ai-work-status update \
+  --repo . \
+  --agent claude \
+  --title "Short task title" \
+  --summary "One-line current state, including important changes and checks run." \
+  --nextRecommendedAction "Give Eric one specific next action."
 ```
 
 For Codex, use:
 
 ```bash
-cat <<'EOF' | ai-work-status update --repo . --agent codex --status running
-## Current goal
-
-...
-
-## Next recommended action
-
-...
-EOF
-```
-
-## Status values
-
-Use one of:
-
-```txt
-running
-blocked
-ready_for_review
-paused
-done
+ai-work-status update \
+  --repo . \
+  --agent codex \
+  --title "Short task title" \
+  --summary "One-line current state, including important changes and checks run." \
+  --nextRecommendedAction "Give Eric one specific next action."
 ```
 
 ## Good status update rules
@@ -66,16 +36,14 @@ Keep the update concise but sufficient for Eric to resume work later.
 
 Always include:
 
-- Current goal
-- What changed
-- Tests/checks run
-- Known issues
-- Next recommended action
+- A short task title
+- A one-line summary of the current state
+- One specific next recommended action
 
-The most important section is:
+The most important flag is:
 
-```md
-## Next recommended action
+```txt
+--nextRecommendedAction
 ```
 
 Make it specific and action-oriented.

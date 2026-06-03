@@ -1,36 +1,33 @@
 import fs from "node:fs/promises";
 import { getStatusReposDir } from "./paths";
 import { normalizeAgent, normalizeStatus } from "./statusNormalization";
-import type { PersistedStatusRecord, Workstream } from "./types";
+import { generatedStatus, type PersistedStatusRecord, type Workstream } from "./types";
 
 const requiredFields = [
-  "schema_version",
-  "workstream_id",
-  "repo_name",
-  "repo_path",
-  "repo_remote",
+  "workstreamId",
+  "repoName",
+  "repoPath",
+  "repoRemote",
   "branch",
   "agent",
   "status",
-  "updated_at",
-  "body_markdown",
+  "updatedAt",
+  "nextRecommendedAction",
 ];
 
 const stringValue = (value: unknown) =>
   typeof value === "string" ? value : value === undefined || value === null ? "" : String(value);
 
-const isValidSchemaVersion = (value: unknown) => value === 1;
-
 const parseRecord = (raw: string) => JSON.parse(raw) as Partial<PersistedStatusRecord>;
 
-const listMarkdownFiles = async (dirPath: string): Promise<string[]> => {
+const listStatusFiles = async (dirPath: string): Promise<string[]> => {
   const entries = await fs.readdir(dirPath, { withFileTypes: true }).catch(() => []);
   const nested = await Promise.all(
     entries.map((entry) => {
       const entryPath = `${dirPath}/${entry.name}`;
 
       return entry.isDirectory()
-        ? listMarkdownFiles(entryPath)
+        ? listStatusFiles(entryPath)
         : entry.isFile() && entry.name.endsWith(".json")
           ? Promise.resolve([entryPath])
           : Promise.resolve([]);
@@ -40,11 +37,7 @@ const listMarkdownFiles = async (dirPath: string): Promise<string[]> => {
   return nested.flat();
 };
 
-const invalidWorkstream = (
-  statusFilePath: string,
-  markdownBody: string,
-  validationErrors: string[],
-): Workstream => ({
+const invalidWorkstream = (statusFilePath: string, validationErrors: string[]): Workstream => ({
   id: statusFilePath,
   repoName: "Invalid status file",
   repoPath: "",
@@ -53,10 +46,10 @@ const invalidWorkstream = (
   agent: "unknown",
   status: "invalid",
   rawStatus: "",
+  nextRecommendedAction: "",
   updatedAt: "",
   updatedAtEpoch: null,
   statusFilePath,
-  markdownBody,
   isValid: false,
   validationErrors,
 });
@@ -69,7 +62,7 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
   });
 
   if (raw.startsWith("__READ_ERROR__")) {
-    return invalidWorkstream(statusFilePath, "", [
+    return invalidWorkstream(statusFilePath, [
       raw.replace("__READ_ERROR__", "Could not read file: "),
     ]);
   }
@@ -79,48 +72,49 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
     const missingPresentFields = requiredFields.filter((field) => !(field in data));
     const validationErrors = requiredFields
       .filter((field) =>
-        field === "schema_version"
-          ? !isValidSchemaVersion(data.schema_version) || missingPresentFields.includes(field)
-          : field === "repo_remote"
-            ? missingPresentFields.includes(field)
-            : !stringValue(data[field as keyof PersistedStatusRecord]).trim(),
+        field === "repoRemote"
+          ? missingPresentFields.includes(field)
+          : !stringValue(data[field as keyof PersistedStatusRecord]).trim(),
       )
       .map((field) => `Missing required field: ${field}`);
-    const rawUpdatedAt = stringValue(data.updated_at);
+    const statusErrors =
+      stringValue(data.status) && stringValue(data.status) !== generatedStatus
+        ? [`Invalid status value: ${stringValue(data.status)}`]
+        : [];
+    const rawUpdatedAt = stringValue(data.updatedAt);
     const updatedAtEpoch = Number.isNaN(Date.parse(rawUpdatedAt)) ? null : Date.parse(rawUpdatedAt);
-    const dateErrors = updatedAtEpoch === null ? ["Invalid updated_at value"] : [];
-    const errors = [...validationErrors, ...dateErrors];
+    const dateErrors = updatedAtEpoch === null ? ["Invalid updatedAt value"] : [];
+    const errors = [...validationErrors, ...statusErrors, ...dateErrors];
 
     return errors.length
-      ? invalidWorkstream(statusFilePath, stringValue(data.body_markdown), errors)
+      ? invalidWorkstream(statusFilePath, errors)
       : {
-          id: stringValue(data.workstream_id),
+          id: stringValue(data.workstreamId),
           title: stringValue(data.title) || undefined,
           summary: stringValue(data.summary) || undefined,
-          repoName: stringValue(data.repo_name),
-          repoPath: stringValue(data.repo_path),
-          repoRemote: stringValue(data.repo_remote),
+          nextRecommendedAction: stringValue(data.nextRecommendedAction),
+          repoName: stringValue(data.repoName),
+          repoPath: stringValue(data.repoPath),
+          repoRemote: stringValue(data.repoRemote),
           branch: stringValue(data.branch),
           agent: normalizeAgent(data.agent),
           status: normalizeStatus(data.status),
           rawStatus: stringValue(data.status),
-          priority: stringValue(data.priority) || undefined,
           updatedAt: rawUpdatedAt,
           updatedAtEpoch,
           statusFilePath,
-          markdownBody: stringValue(data.body_markdown).trim(),
           isValid: true,
           validationErrors: [],
         };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
-    return invalidWorkstream(statusFilePath, raw, [`Could not parse JSON: ${message}`]);
+    return invalidWorkstream(statusFilePath, [`Could not parse JSON: ${message}`]);
   }
 };
 
 export const listWorkstreams = async (statusRoot = getStatusReposDir()) => {
-  const files = await listMarkdownFiles(statusRoot);
+  const files = await listStatusFiles(statusRoot);
   const workstreams = await Promise.all(files.map((file) => parseStatusFile(file)));
 
   return workstreams.sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0));

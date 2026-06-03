@@ -1,14 +1,13 @@
 {
-  "schema_version": 1,
-  "workstream_id": "figma-service__ai-dev-resource-spike",
-  "repo_name": "figma-service",
-  "repo_path": "/Users/eric/code/figma-service",
+  "workstreamId": "figma-service__ai-dev-resource-spike",
+  "repoName": "figma-service",
+  "repoPath": "/Users/eric/code/figma-service",
+  "repoRemote": "git@github.com:example/figma-service.git",
   "branch": "ai/dev-resource-spike",
   "agent": "claude",
-  "status": "blocked",
-  "updated_at": "2026-05-31T10:42:00-07:00",
-  "priority": "medium",
+  "status": "done",
+  "updatedAt": "2026-05-31T10:42:00-07:00",
   "title": "Figma dev resource annotation strategy",
   "summary": "Blocked on choosing where reusable component annotations should live.",
-  "body_markdown": "## Current goal\n\nFigure out a durable way to attach component metadata to Figma-originated design data so the downstream AI mapping pipeline can retrieve it.\n\n## What changed\n\n- Investigated dev resource availability.\n- Identified limitations when consuming library components from another file.\n- Started considering a separate component annotation knowledge base.\n\n## Tests/checks run\n\nNo automated tests yet.\n\n## Known issues\n\nNeed a decision on whether detached instances must keep their annotations.\n\n## Next recommended action\n\nChoose whether the source of truth should be Figma metadata, a knowledge base, or a hybrid."
+  "nextRecommendedAction": "Choose whether the source of truth should be Figma metadata, a knowledge base, or a hybrid."
 }

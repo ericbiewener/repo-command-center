@@ -8,7 +8,7 @@ A macOS Electron menu bar app for tracking active AI-assisted coding workstreams
 AI agent -> ai-work-status CLI -> Electron local API -> ~/.ai-work-status/repos/**/*.json -> dashboard
 ```
 
-If the Electron app is not running, the CLI writes the same canonical Markdown file directly with the shared status writer.
+If the Electron app is not running, the CLI writes the same canonical JSON file directly with the shared status writer.
 
 ## Install
 
@@ -45,27 +45,12 @@ Ensure `~/bin` is on `PATH`.
 From inside a Git repository:
 
 ```bash
-cat <<'EOF' | ai-work-status update --repo . --agent codex --status running --title "Initial implementation"
-## Current goal
-
-Build the first version of the command center.
-
-## What changed
-
-Implemented the Electron app shell.
-
-## Tests/checks run
-
-Started app in dev mode.
-
-## Known issues
-
-No known issues.
-
-## Next recommended action
-
-Review the UI and confirm status cards render correctly.
-EOF
+ai-work-status update \
+  --repo . \
+  --agent codex \
+  --title "Initial implementation" \
+  --summary "Implemented the Electron app shell and started the app in dev mode." \
+  --nextRecommendedAction "Review the UI and confirm status cards render correctly."
 ```
 
 Useful options:
@@ -73,13 +58,9 @@ Useful options:
 ```txt
 --repo <path>
 --agent <claude|codex|other>
---status <running|blocked|ready_for_review|paused|done>
 --title <title>
 --summary <summary>
---priority <low|medium|high>
---body-file <path>
---json
---direct
+--nextRecommendedAction <action>
 ```
 
 ## Agent Setup
@@ -94,7 +75,7 @@ Status files are written under:
 ~/.ai-work-status/repos/<repo-key>/branches/<branch-key>.json
 ```
 
-Each file contains generated JSON metadata and the submitted Markdown body as `body_markdown`.
+Each file contains generated JSON metadata and structured update fields, including `next_recommended_action`.
 
 ## Local API
 

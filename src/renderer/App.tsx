@@ -17,12 +17,12 @@ const matchesQuery = (workstream: Workstream, query: string) => {
     workstream.branch,
     workstream.title,
     workstream.summary,
+    workstream.nextRecommendedAction,
     workstream.agent,
     workstream.status,
     workstream.rawStatus,
     workstream.repoPath,
     workstream.statusFilePath,
-    workstream.markdownBody,
   ]
     .filter(Boolean)
     .join("\n")
@@ -45,7 +45,7 @@ const DashboardApp = () => {
   const [workstreams, setWorkstreams] = useState<Workstream[]>([]);
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [query, setQuery] = useState("");
-  const [showDone, setShowDone] = useState(false);
+  const [showDone, setShowDone] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
