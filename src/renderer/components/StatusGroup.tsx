@@ -10,7 +10,7 @@ type StatusGroupProps = {
 const formatItemCount = (count: number) => `${count} ${count === 1 ? "item" : "items"}`;
 
 const StatusGroup = ({ group, onOpenRepo }: StatusGroupProps) => (
-  <section className="repo-section">
+  <section className="repo-section" id={`repo-section-${group.repoKey}`}>
     <div className="repo-heading">
       <h2>
         <Folder size={15} />
@@ -20,7 +20,11 @@ const StatusGroup = ({ group, onOpenRepo }: StatusGroupProps) => (
     </div>
     <div className="branch-list">
       {group.branches.map((branchGroup) => (
-        <section className="branch-section" key={`${group.repoKey}-${branchGroup.branch}`}>
+        <section
+          className="branch-section"
+          key={`${group.repoKey}-${branchGroup.branch}`}
+          id={`branch-section-${group.repoKey}-${branchGroup.branch}`}
+        >
           <div className="branch-heading">
             <h3>
               <GitBranch size={14} />
