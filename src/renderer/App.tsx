@@ -5,6 +5,7 @@ import EmptyState from "./components/EmptyState";
 import ErrorPanel from "./components/ErrorPanel";
 import Header from "./components/Header";
 import SearchBox from "./components/SearchBox";
+import Sidebar from "./components/Sidebar";
 import StatusGroup from "./components/StatusGroup";
 import { getEmptyStateKind } from "./utils/getEmptyStateKind";
 import { groupWorkstreams } from "./utils/groupWorkstreams";
@@ -148,10 +149,13 @@ const DashboardApp = () => {
           statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"}
         />
       ) : (
-        <div className="groups">
-          {groups.map((group) => (
-            <StatusGroup key={group.repoKey} group={group} onOpenRepo={openRepo} />
-          ))}
+        <div className="content-area">
+          <Sidebar groups={groups} />
+          <div className="groups">
+            {groups.map((group) => (
+              <StatusGroup key={group.repoKey} group={group} onOpenRepo={openRepo} />
+            ))}
+          </div>
         </div>
       )}
     </main>
