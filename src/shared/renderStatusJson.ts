@@ -1,4 +1,10 @@
-import type { PersistedStatusRecord, RepoInfo, StatusPathInfo, StatusUpdatePayload } from "./types";
+import {
+  generatedStatus,
+  type PersistedStatusRecord,
+  type RepoInfo,
+  type StatusPathInfo,
+  type StatusUpdatePayload,
+} from "./types";
 
 export const buildStatusRecord = (args: {
   payload: StatusUpdatePayload;
@@ -6,19 +12,17 @@ export const buildStatusRecord = (args: {
   pathInfo: StatusPathInfo;
   updatedAt: string;
 }): PersistedStatusRecord => ({
-  schema_version: 1,
-  workstream_id: args.pathInfo.workstreamId,
-  repo_name: args.repoInfo.repoName,
-  repo_path: args.repoInfo.repoRoot,
-  repo_remote: args.repoInfo.repoRemote,
+  workstreamId: args.pathInfo.workstreamId,
+  repoName: args.repoInfo.repoName,
+  repoPath: args.repoInfo.repoRoot,
+  repoRemote: args.repoInfo.repoRemote,
   branch: args.repoInfo.branch,
   agent: args.payload.agent,
-  status: args.payload.status,
-  updated_at: args.updatedAt,
-  body_markdown: args.payload.bodyMarkdown.trimEnd(),
+  status: generatedStatus,
+  updatedAt: args.updatedAt,
   ...(args.payload.title ? { title: args.payload.title } : {}),
   ...(args.payload.summary ? { summary: args.payload.summary } : {}),
-  ...(args.payload.priority ? { priority: args.payload.priority } : {}),
+  nextRecommendedAction: args.payload.nextRecommendedAction,
 });
 
 export const renderStatusJson = (args: {

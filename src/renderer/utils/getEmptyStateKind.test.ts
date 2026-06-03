@@ -12,10 +12,10 @@ const makeWorkstream = (status: Workstream["status"], id = status) =>
     agent: "codex",
     status,
     rawStatus: status,
+    nextRecommendedAction: "Review it.",
     updatedAt: "2026-06-03T16:48:22.866Z",
     updatedAtEpoch: 1_780_506_502_866,
     statusFilePath: `/status/${id}.json`,
-    markdownBody: "## Current goal\n\nFix it.",
     isValid: true,
     validationErrors: [],
   }) satisfies Workstream;
