@@ -8,6 +8,7 @@ const requiredFields = [
   "workstream_id",
   "repo_name",
   "repo_path",
+  "repo_remote",
   "branch",
   "agent",
   "status",
@@ -47,6 +48,7 @@ const invalidWorkstream = (
   id: statusFilePath,
   repoName: "Invalid status file",
   repoPath: "",
+  repoRemote: "",
   branch: "",
   agent: "unknown",
   status: "invalid",
@@ -74,11 +76,14 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
 
   try {
     const data = parseRecord(raw);
+    const missingPresentFields = requiredFields.filter((field) => !(field in data));
     const validationErrors = requiredFields
       .filter((field) =>
         field === "schema_version"
-          ? !isValidSchemaVersion(data.schema_version)
-          : !stringValue(data[field as keyof PersistedStatusRecord]).trim(),
+          ? !isValidSchemaVersion(data.schema_version) || missingPresentFields.includes(field)
+          : field === "repo_remote"
+            ? missingPresentFields.includes(field)
+            : !stringValue(data[field as keyof PersistedStatusRecord]).trim(),
       )
       .map((field) => `Missing required field: ${field}`);
     const rawUpdatedAt = stringValue(data.updated_at);
@@ -94,6 +99,7 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
           summary: stringValue(data.summary) || undefined,
           repoName: stringValue(data.repo_name),
           repoPath: stringValue(data.repo_path),
+          repoRemote: stringValue(data.repo_remote),
           branch: stringValue(data.branch),
           agent: normalizeAgent(data.agent),
           status: normalizeStatus(data.status),

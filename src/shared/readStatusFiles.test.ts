@@ -20,6 +20,7 @@ describe("listWorkstreams", () => {
           workstream_id: "repo__main",
           repo_name: "repo",
           repo_path: root,
+          repo_remote: "git@github.com:example/repo.git",
           branch: "main",
           agent: "codex",
           status: "running",
@@ -33,7 +34,21 @@ describe("listWorkstreams", () => {
     );
     await fs.writeFile(
       path.join(repoDir, "bad.json"),
-      JSON.stringify({ schema_version: 1, repo_name: "broken" }, null, 2),
+      JSON.stringify(
+        {
+          schema_version: 1,
+          workstream_id: "repo__bad",
+          repo_name: "repo",
+          repo_path: root,
+          branch: "bad",
+          agent: "codex",
+          status: "running",
+          updated_at: "2026-05-31T18:21:10.000Z",
+          body_markdown: "## Current goal\n\nBuild it.",
+        },
+        null,
+        2,
+      ),
       "utf8",
     );
 
@@ -41,7 +56,8 @@ describe("listWorkstreams", () => {
 
     expect(workstreams).toHaveLength(2);
     expect(workstreams[0]?.id).toBe("repo__main");
+    expect(workstreams[0]?.repoRemote).toBe("git@github.com:example/repo.git");
     expect(workstreams[1]?.status).toBe("invalid");
-    expect(workstreams[1]?.validationErrors).toContain("Missing required field: workstream_id");
+    expect(workstreams[1]?.validationErrors).toContain("Missing required field: repo_remote");
   });
 });

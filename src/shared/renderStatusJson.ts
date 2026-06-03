@@ -10,6 +10,7 @@ export const buildStatusRecord = (args: {
   workstream_id: args.pathInfo.workstreamId,
   repo_name: args.repoInfo.repoName,
   repo_path: args.repoInfo.repoRoot,
+  repo_remote: args.repoInfo.repoRemote,
   branch: args.repoInfo.branch,
   agent: args.payload.agent,
   status: args.payload.status,

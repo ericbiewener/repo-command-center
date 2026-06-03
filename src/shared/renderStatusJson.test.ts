@@ -17,7 +17,8 @@ describe("renderStatusJson", () => {
       repoRoot: "/tmp/repo",
       repoName: "repo",
       branch: "main",
-      repoIdSource: "/tmp/repo",
+      repoRemote: "git@github.com:example/repo.git",
+      repoIdSource: "git@github.com:example/repo.git",
     };
     const pathInfo: StatusPathInfo = {
       repoKey: "repo--abc",
@@ -37,6 +38,7 @@ describe("renderStatusJson", () => {
     expect(record.workstream_id).toBe("repo__main");
     expect(record.agent).toBe("codex");
     expect(record.status).toBe("running");
+    expect(record.repo_remote).toBe("git@github.com:example/repo.git");
     expect(record.body_markdown).toBe("## Current goal\n\nBuild the app.");
   });
 });

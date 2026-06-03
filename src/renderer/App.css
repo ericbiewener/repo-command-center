@@ -185,23 +185,61 @@ code {
   gap: 18px;
 }
 
-.status-heading {
+.repo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.repo-heading,
+.branch-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  gap: 10px;
 }
 
-.status-heading h2 {
+.repo-heading h2,
+.branch-heading h3 {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.repo-heading h2 {
   margin: 0;
-  font-size: 13px;
-  text-transform: uppercase;
-  color: #5f5b51;
+  color: #2b2c28;
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 720;
 }
 
-.status-heading span {
+.repo-heading span,
+.branch-heading span {
   color: #797468;
   font-size: 12px;
+  white-space: nowrap;
+}
+
+.branch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.branch-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.branch-heading h3 {
+  margin: 0;
+  color: #5f5b51;
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 650;
 }
 
 .card-list {

@@ -6,12 +6,14 @@ import ErrorPanel from "./components/ErrorPanel";
 import Header from "./components/Header";
 import SearchBox from "./components/SearchBox";
 import StatusGroup from "./components/StatusGroup";
+import { getEmptyStateKind } from "./utils/getEmptyStateKind";
 import { groupWorkstreams } from "./utils/groupWorkstreams";
 
 const matchesQuery = (workstream: Workstream, query: string) => {
   const value = query.trim().toLowerCase();
   const haystack = [
     workstream.repoName,
+    workstream.repoRemote,
     workstream.branch,
     workstream.title,
     workstream.summary,
@@ -96,6 +98,14 @@ const DashboardApp = () => {
     [query, showDone, workstreams],
   );
   const groups = useMemo(() => groupWorkstreams(filteredWorkstreams), [filteredWorkstreams]);
+  const doneCount = useMemo(
+    () => workstreams.filter((workstream) => workstream.status === "done").length,
+    [workstreams],
+  );
+  const emptyStateKind = useMemo(
+    () => getEmptyStateKind({ workstreams, query, showDone }),
+    [query, showDone, workstreams],
+  );
   const invalidWorkstreams = useMemo(
     () => workstreams.filter((workstream) => !workstream.isValid),
     [workstreams],
@@ -132,17 +142,15 @@ const DashboardApp = () => {
       <ErrorPanel message={error} invalidWorkstreams={invalidWorkstreams} />
 
       {!isLoading && groups.length === 0 ? (
-        <EmptyState statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"} />
+        <EmptyState
+          hiddenDoneCount={doneCount}
+          kind={emptyStateKind}
+          statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"}
+        />
       ) : (
         <div className="groups">
           {groups.map((group) => (
-            <StatusGroup
-              key={group.status}
-              label={group.label}
-              status={group.status}
-              workstreams={group.items}
-              onOpenRepo={openRepo}
-            />
+            <StatusGroup key={group.repoKey} group={group} onOpenRepo={openRepo} />
           ))}
         </div>
       )}

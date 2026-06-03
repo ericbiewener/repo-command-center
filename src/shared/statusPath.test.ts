@@ -13,6 +13,7 @@ describe("status path", () => {
       repoRoot: "/Users/eric/code/figma-service",
       repoName: "figma-service",
       branch: "ai/dev-resource-spike",
+      repoRemote: "git@github.com:example/figma-service.git",
       repoIdSource: "git@github.com:example/figma-service.git",
     };
     const pathInfo = computeStatusPath(repoInfo);

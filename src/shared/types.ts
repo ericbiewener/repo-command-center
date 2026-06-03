@@ -24,6 +24,7 @@ export type RepoInfo = {
   repoRoot: string;
   repoName: string;
   branch: string;
+  repoRemote: string;
   repoIdSource: string;
 };
 
@@ -39,6 +40,7 @@ export type PersistedStatusRecord = {
   workstream_id: string;
   repo_name: string;
   repo_path: string;
+  repo_remote: string;
   branch: string;
   agent: StatusUpdatePayload["agent"];
   status: StatusUpdatePayload["status"];
@@ -66,6 +68,7 @@ export type Workstream = {
   summary?: string;
   repoName: string;
   repoPath: string;
+  repoRemote: string;
   branch: string;
   agent: AgentKind;
   status: WorkstreamStatus;
