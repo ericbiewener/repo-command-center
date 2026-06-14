@@ -19,11 +19,4 @@ PROMPT="Analyze the context of the previous agent session to determine a TITLE a
 
 node \"$STATUS_SCRIPT\" update --repo \"$REPO_ROOT\" --agent \"$AGENT\" --title \"TITLE\" --summary \"SUMMARY\""
 
-if [ "$AGENT" = "claude" ]; then
-  AGENT_HOOK_CHILD=1 claude --dangerously-bypass-approvals-and-sandbox --continue --fork-session --print "$PROMPT"
-elif [ "$AGENT" = "codex" ]; then
-  codex -q "$PROMPT"
-else
-  echo "Unknown agent: $AGENT" >&2
-  exit 1
-fi
+AGENT_HOOK_CHILD=1 claude --dangerously-skip-permissions --continue --fork-session --print "$PROMPT"
