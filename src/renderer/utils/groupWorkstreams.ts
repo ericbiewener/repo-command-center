@@ -54,5 +54,18 @@ export const groupWorkstreams = (workstreams: Workstream[]) => {
     repo.branches[branchIndex].items.push(workstream);
   });
 
+  const maxEpoch = (items: { updatedAtEpoch: number | null }[]) =>
+    items.reduce((acc, w) => Math.max(acc, w.updatedAtEpoch ?? 0), 0);
+
+  for (const repo of repos) {
+    repo.branches.sort((a, b) => maxEpoch(b.items) - maxEpoch(a.items));
+  }
+
+  repos.sort(
+    (a, b) =>
+      maxEpoch(b.branches.flatMap((br) => br.items)) -
+      maxEpoch(a.branches.flatMap((br) => br.items)),
+  );
+
   return repos;
 };
