@@ -24,7 +24,6 @@ describe("listWorkstreams", () => {
           agent: "codex",
           status: "done",
           updatedAt: "2026-05-31T18:22:10.000Z",
-          nextRecommendedAction: "Review it.",
         },
         null,
         2,
@@ -42,7 +41,6 @@ describe("listWorkstreams", () => {
           agent: "codex",
           status: "done",
           updatedAt: "2026-05-31T18:21:10.000Z",
-          nextRecommendedAction: "Review it.",
         },
         null,
         2,
@@ -55,41 +53,7 @@ describe("listWorkstreams", () => {
     expect(workstreams).toHaveLength(2);
     expect(workstreams[0]?.id).toBe("repo__main");
     expect(workstreams[0]?.repoRemote).toBe("git@github.com:example/repo.git");
-    expect(workstreams[0]?.nextRecommendedAction).toBe("Review it.");
     expect(workstreams[1]?.status).toBe("invalid");
     expect(workstreams[1]?.validationErrors).toContain("Missing required field: repoRemote");
-  });
-
-  test("rejects old Markdown body files instead of reading body data", async () => {
-    const root = await makeTempDir();
-    const repoDir = path.join(root, "repo--abc", "branches");
-
-    await fs.mkdir(repoDir, { recursive: true });
-    await fs.writeFile(
-      path.join(repoDir, "main.json"),
-      JSON.stringify(
-        {
-          workstreamId: "repo__main",
-          repoName: "repo",
-          repoPath: root,
-          repoRemote: "git@github.com:example/repo.git",
-          branch: "main",
-          agent: "codex",
-          status: "done",
-          updatedAt: "2026-05-31T18:22:10.000Z",
-          body_markdown: "## Current goal\n\nBuild it.",
-        },
-        null,
-        2,
-      ),
-      "utf8",
-    );
-
-    const workstreams = await listWorkstreams(root);
-
-    expect(workstreams[0]?.status).toBe("invalid");
-    expect(workstreams[0]?.validationErrors).toContain(
-      "Missing required field: nextRecommendedAction",
-    );
   });
 });

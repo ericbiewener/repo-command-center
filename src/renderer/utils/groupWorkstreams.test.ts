@@ -12,7 +12,6 @@ const makeWorkstream = (overrides: Partial<Workstream> = {}) =>
     agent: "codex",
     status: "running",
     rawStatus: "running",
-    nextRecommendedAction: "Review it.",
     updatedAt: "2026-06-03T16:48:22.866Z",
     updatedAtEpoch: 1_780_506_502_866,
     statusFilePath:

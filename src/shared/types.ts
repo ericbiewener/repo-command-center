@@ -7,7 +7,6 @@ export type StatusUpdatePayload = {
   agent: (typeof agentKinds)[number];
   title?: string;
   summary?: string;
-  nextRecommendedAction: string;
 };
 
 export type RepoInfo = {
@@ -36,7 +35,6 @@ export type PersistedStatusRecord = {
   updatedAt: string;
   title?: string;
   summary?: string;
-  nextRecommendedAction: string;
 };
 
 export type WorkstreamStatus =
@@ -54,7 +52,6 @@ export type Workstream = {
   id: string;
   title?: string;
   summary?: string;
-  nextRecommendedAction: string;
   repoName: string;
   repoPath: string;
   repoRemote: string;

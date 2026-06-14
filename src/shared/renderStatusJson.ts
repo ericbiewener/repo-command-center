@@ -22,7 +22,6 @@ export const buildStatusRecord = (args: {
   updatedAt: args.updatedAt,
   ...(args.payload.title ? { title: args.payload.title } : {}),
   ...(args.payload.summary ? { summary: args.payload.summary } : {}),
-  nextRecommendedAction: args.payload.nextRecommendedAction,
 });
 
 export const renderStatusJson = (args: {

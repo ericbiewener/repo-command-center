@@ -69,33 +69,6 @@ code {
   overflow: hidden;
 }
 
-.app-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 24px;
-  line-height: 1.12;
-  font-weight: 720;
-}
-
-.app-header p {
-  margin: 4px 0 0;
-  color: #676254;
-  font-size: 13px;
-}
-
-.header-status {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
 .pill,
 .badge {
   display: inline-flex;
@@ -124,52 +97,6 @@ code {
 .badge-neutral {
   color: #4f514d;
   background: #e3e0d7;
-}
-
-.toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  height: 38px;
-  border: 1px solid #c8c2b5;
-  border-radius: 8px;
-  padding: 0 11px;
-  background: #ffffff;
-}
-
-.search-box input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  color: #20211f;
-  background: transparent;
-}
-
-.toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 38px;
-  border: 1px solid #c8c2b5;
-  border-radius: 8px;
-  padding: 0 10px;
-  color: #393a35;
-  background: #ffffff;
-  font-size: 13px;
-}
-
-.actions-row {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .error-panel {
@@ -257,7 +184,6 @@ code {
 .branch-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
 }
 
@@ -272,16 +198,9 @@ code {
 .repo-heading h2 {
   margin: 0;
   color: #2b2c28;
-  font-size: 15px;
+  font-size: 2rem;
   line-height: 1.25;
-  font-weight: 720;
-}
-
-.repo-heading span,
-.branch-heading span {
-  color: #797468;
-  font-size: 12px;
-  white-space: nowrap;
+  font-weight: normal;
 }
 
 .branch-list {
@@ -299,9 +218,11 @@ code {
 .branch-heading h3 {
   margin: 0;
   color: #5f5b51;
-  font-size: 13px;
+  font-size: 1.5rem;
   line-height: 1.25;
   font-weight: 650;
+  display: flex;
+  gap: 0.2rem;
 }
 
 .card-list {
@@ -342,47 +263,33 @@ code {
   border-left-color: #bf3d28;
 }
 
-.card-meta {
+.card-title {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
 }
 
-.card-meta time {
-  margin-left: auto;
-  color: #686257;
-  font-size: 12px;
-}
-
-.badge-blocked {
-  color: #6d2518;
-  background: #f6d3c5;
-}
-
-.badge-ready_for_review {
-  color: #2d2b77;
-  background: #e1defb;
-}
-
-.badge-running {
-  color: #174c38;
-  background: #d5eadf;
-}
-
-.badge-paused,
-.badge-done,
-.badge-other {
-  color: #474945;
-  background: #e6e2d8;
-}
-
-.workstream-card h3 {
+.card-title h3 {
+  flex: 1;
+  min-width: 0;
   overflow-wrap: anywhere;
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 16px;
   line-height: 1.25;
+}
+
+.vscode-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.card-title button {
+  flex-shrink: 0;
+  min-height: unset;
+  padding: 5px;
+  border-radius: 6px;
 }
 
 .summary {
@@ -390,44 +297,6 @@ code {
   color: #5f5b51;
   font-size: 13px;
   line-height: 1.35;
-}
-
-.next-action {
-  display: grid;
-  gap: 4px;
-  margin: 10px 0;
-  border-left: 2px solid #c8c2b5;
-  padding-left: 9px;
-}
-
-.next-action span {
-  color: #6d675b;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.next-action p {
-  margin: 0;
-  color: #2c2d29;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.repo-lines {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  color: #4d514b;
-  font-size: 12px;
-}
-
-.repo-lines span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 .invalid-details {
@@ -446,25 +315,6 @@ code {
 
 .invalid-details strong {
   overflow-wrap: anywhere;
-}
-
-.card-footer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid #ece7dc;
-}
-
-.card-footer span {
-  min-width: 0;
-  overflow: hidden;
-  color: #716c60;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .empty-state {
@@ -503,26 +353,6 @@ code {
 @media (max-width: 460px) {
   .app-shell {
     padding: 14px;
-  }
-
-  .app-header,
-  .toolbar,
-  .card-footer {
-    grid-template-columns: 1fr;
-  }
-
-  .app-header {
-    display: grid;
-  }
-
-  .header-status,
-  .actions-row {
-    justify-content: flex-start;
-  }
-
-  .card-meta time {
-    width: 100%;
-    margin-left: 0;
   }
 
   .content-area {
