@@ -5,13 +5,15 @@
   "type": "module",
   "main": "out/main/main.js",
   "bin": {
-    "ai-work-status": "dist/cli/ai-work-status.js"
+    "ai-work-status": "dist/cli/ai-work-status.js",
+    "command-center": "dist/cli/view.js"
   },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "pnpm build:cli && electron-vite build",
-    "build:cli": "tsup src/cli/ai-work-status.ts --format esm --platform node --target node20 --out-dir dist/cli --clean && chmod +x dist/cli/ai-work-status.js",
-    "build:cli:watch": "tsup src/cli/ai-work-status.ts --format esm --platform node --target node20 --out-dir dist/cli --clean --watch --onSuccess \"chmod +x dist/cli/ai-work-status.js\"",
+    "build:cli": "tsup src/cli/ai-work-status.ts src/cli/view.ts --format esm --platform node --target node20 --out-dir dist/cli --clean && chmod +x dist/cli/ai-work-status.js dist/cli/view.js",
+    "build:cli:watch": "tsup src/cli/ai-work-status.ts src/cli/view.ts --format esm --platform node --target node20 --out-dir dist/cli --clean --watch --onSuccess \"chmod +x dist/cli/ai-work-status.js dist/cli/view.js\"",
+    "dev:cli": "npx tsx --watch src/cli/view.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -25,10 +27,13 @@
     "*.{css,json,md,ts,tsx}": "biome check --write --no-errors-on-unmatched"
   },
   "dependencies": {
+    "@clack/prompts": "^1.5.1",
     "@vitejs/plugin-react": "^4.6.0",
     "electron": "^39.2.7",
     "electron-vite": "^4.0.0",
+    "execa": "^9.6.1",
     "lucide-react": "^0.555.0",
+    "picocolors": "^1.1.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "yargs": "^18.0.0",
