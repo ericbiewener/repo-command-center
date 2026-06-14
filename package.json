@@ -18,7 +18,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "sessions": "pgrep -fl claude"
   },
   "lint-staged": {
     "*.{css,json,md,ts,tsx}": "biome check --write --no-errors-on-unmatched"

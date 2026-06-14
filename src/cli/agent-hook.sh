@@ -17,6 +17,8 @@ AGENT="${AGENT:?AGENT env var must be set}"
 
 PROMPT="Analyze the context of the previous agent session to determine a TITLE and SUMMARY of what was done. Execute this command with those values:
 
-node \"$STATUS_SCRIPT\" update --repo \"$REPO_ROOT\" --agent \"$AGENT\" --title \"TITLE\" --summary \"SUMMARY\""
+node \"$STATUS_SCRIPT\" update --repo \"$REPO_ROOT\" --agent \"$AGENT\" --title \"TITLE\" --summary \"SUMMARY\"
+
+You must ONLY execute that command. Do NOTHING else."
 
 AGENT_HOOK_CHILD=1 claude --dangerously-skip-permissions --continue --fork-session --print "$PROMPT"
