@@ -6,13 +6,14 @@
   "main": "out/main/main.js",
   "bin": {
     "ai-work-status": "dist/cli/ai-work-status.js",
+    "ai-work-dashboard": "dist/cli/dashboard.js",
     "command-center": "dist/cli/view.js"
   },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "pnpm build:cli && electron-vite build",
-    "build:cli": "tsup src/cli/ai-work-status.ts src/cli/view.ts --format esm --platform node --target node20 --out-dir dist/cli --clean && chmod +x dist/cli/ai-work-status.js dist/cli/view.js",
-    "build:cli:watch": "tsup src/cli/ai-work-status.ts src/cli/view.ts --format esm --platform node --target node20 --out-dir dist/cli --clean --watch --onSuccess \"chmod +x dist/cli/ai-work-status.js dist/cli/view.js\"",
+    "build:cli": "tsup src/cli/ai-work-status.ts src/cli/dashboard.tsx --format esm --platform node --target node20 --out-dir dist/cli --clean && chmod +x dist/cli/ai-work-status.js dist/cli/dashboard.js",
+    "build:cli:watch": "tsup src/cli/ai-work-status.ts src/cli/dashboard.tsx --format esm --platform node --target node20 --out-dir dist/cli --clean --watch --onSuccess \"chmod +x dist/cli/ai-work-status.js dist/cli/dashboard.js\"",
     "dev:cli": "npx tsx --watch src/cli/view.ts",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -31,7 +32,8 @@
     "@vitejs/plugin-react": "^4.6.0",
     "electron": "^39.2.7",
     "electron-vite": "^4.0.0",
-    "execa": "^9.6.1",
+    "fuzzy": "^0.1.3",
+    "ink": "^7.0.6",
     "lucide-react": "^0.555.0",
     "picocolors": "^1.1.1",
     "react": "^19.2.0",
