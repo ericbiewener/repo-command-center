@@ -18,7 +18,7 @@ STATUS_SCRIPT="$SCRIPT_ROOT/dist/cli/ai-work-status.js"
 REPO_ROOT="${WORKTREE_ROOT:-$SCRIPT_ROOT}"
 AGENT="${AGENT:?AGENT env var must be set}"
 
-PROMPT="Analyze the context of the previous agent session to determine a TITLE and SUMMARY of what was done. Execute this command with those values:
+PROMPT="Analyze the context of the previous agent session to determine a TITLE and SUMMARY of what was done. If no files were actually changed, STOP and DO NOTHING FURTHER. Otherwise, execute this command with those values:
 
 node \"$STATUS_SCRIPT\" update --repo \"$REPO_ROOT\" --agent \"$AGENT\" --title \"TITLE\" --summary \"SUMMARY\"
 
