@@ -1,4 +1,4 @@
-import { Folder, GitBranch } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import type { WorkstreamRepoGroup } from "../utils/groupWorkstreams";
 import WorkstreamCard from "./WorkstreamCard";
 
