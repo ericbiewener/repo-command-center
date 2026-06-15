@@ -177,7 +177,7 @@ const renderTUI = (
   lines.push(
     deleteMode
       ? pc.dim("  ↑↓ navigate · enter delete · esc quit")
-      : pc.dim("  ↑↓ navigate · enter select · ctrl+r refresh · esc quit"),
+      : pc.dim("  ↑↓ navigate · enter select · ⌫ delete · ctrl+r refresh · esc quit"),
   );
 
   process.stdout.write(CLEAR + lines.join("\n") + "\n");
@@ -268,7 +268,15 @@ const runTUI = (
       }
 
       if (key.name === "backspace") {
-        updateFilter(filter.slice(0, -1));
+        if (filter.length > 0) {
+          updateFilter(filter.slice(0, -1));
+        } else if (filteredRows.length > 0) {
+          const row = filteredRows[cursor];
+          if (row) {
+            cleanup();
+            resolve({ type: "delete", row, filter, cursor });
+          }
+        }
         return;
       }
 
