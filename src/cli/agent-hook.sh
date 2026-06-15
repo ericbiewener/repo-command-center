@@ -7,12 +7,15 @@ set -euo pipefail
 # Re-exec ourselves with AGENT_HOOK_RUNNING=1 via nohup and exit immediately.
 if [ "${AGENT_HOOK_RUNNING:-}" != "1" ]; then
   afplay /System/Library/Sounds/Glass.aiff &
-  AGENT_HOOK_RUNNING=1 nohup "$0" >> /tmp/agent-hook.log 2>&1 &
+  # Capture the worktree root now (cwd-based) before nohup loses the cwd context.
+  WORKTREE_ROOT="$(git rev-parse --show-toplevel)"
+  AGENT_HOOK_RUNNING=1 WORKTREE_ROOT="$WORKTREE_ROOT" nohup "$0" >> /tmp/agent-hook.log 2>&1 &
   exit 0
 fi
 
-REPO_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-STATUS_SCRIPT="$REPO_ROOT/dist/cli/ai-work-status.js"
+SCRIPT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+STATUS_SCRIPT="$SCRIPT_ROOT/dist/cli/ai-work-status.js"
+REPO_ROOT="${WORKTREE_ROOT:-$SCRIPT_ROOT}"
 AGENT="${AGENT:?AGENT env var must be set}"
 
 PROMPT="Analyze the context of the previous agent session to determine a TITLE and SUMMARY of what was done. Execute this command with those values:
