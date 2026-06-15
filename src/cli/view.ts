@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import assert from "node:assert";
+import fs from "node:fs/promises";
+import path from "node:path";
 import readline from "node:readline";
 import { isCancel, note, select } from "@clack/prompts";
 import { execa } from "execa";
@@ -10,7 +12,7 @@ import type {
 } from "../renderer/utils/groupWorkstreams";
 import { groupWorkstreams } from "../renderer/utils/groupWorkstreams";
 import { listWorkstreams } from "../shared/readStatusFiles";
-import type { AgentKind, WorkstreamStatus } from "../shared/types";
+import type { AgentKind, Workstream, WorkstreamStatus } from "../shared/types";
 import { yargsInit } from "./yargs";
 
 const CLEAR = "\x1b[2J\x1b[H";
@@ -88,8 +90,15 @@ const renderTUI = (
   cursor: number,
   filter: string,
   multi: boolean,
+  deleteMode: boolean,
 ) => {
   const lines: string[] = [];
+
+  if (deleteMode) {
+    lines.push(`  \x1b[41m\x1b[38;2;0;0;0m DELETE MODE \x1b[0m`);
+    lines.push("");
+  }
+
   const filteredKeys = new Set(filteredRows.map((r) => `${r.group.repoKey}::${r.branch.branch}`));
 
   const termWidth = process.stdout.columns || 100;
@@ -116,7 +125,7 @@ const renderTUI = (
 
       const isSelected = rowIdx === cursor;
       const mostRecent = branch.items[0];
-      const prefix = isSelected ? pc.green("▶ ") : "  ";
+      const prefix = isSelected ? (deleteMode ? pc.red("▶ ") : pc.green("▶ ")) : "  ";
 
       const branchPadded = truncate(branch.branch, branchW);
       const title = (mostRecent?.title ?? "").padEnd(titleW);
@@ -124,14 +133,15 @@ const renderTUI = (
       const summaryW = Math.max(0, available - branchW - COL_SEP.length - titleW - COL_SEP.length);
 
       if (isSelected) {
+        const selectedColor = deleteMode ? pc.red : pc.green;
         if (multi) {
-          lines.push(`${prefix}${pc.green(branchPadded)}${COL_SEP}${pc.white(title)}`);
+          lines.push(`${prefix}${selectedColor(branchPadded)}${COL_SEP}${pc.white(title)}`);
           lines.push("");
           for (const line of wrapToWidth(summary, available)) lines.push(`  ${pc.white(line)}`);
           lines.push("");
         } else {
           lines.push(
-            `${prefix}${pc.green(branchPadded)}${COL_SEP}${pc.white(title)}${COL_SEP}${pc.white(truncate(summary, summaryW))}`,
+            `${prefix}${selectedColor(branchPadded)}${COL_SEP}${pc.white(title)}${COL_SEP}${pc.white(truncate(summary, summaryW))}`,
           );
         }
       } else {
@@ -152,7 +162,11 @@ const renderTUI = (
   }
 
   lines.push(`  ${pc.dim("/")} ${filter}${pc.dim("█")}`);
-  lines.push(pc.dim("  ↑↓ navigate · enter select · ctrl+r refresh · esc quit"));
+  lines.push(
+    deleteMode
+      ? pc.dim("  ↑↓ navigate · enter delete · esc quit")
+      : pc.dim("  ↑↓ navigate · enter select · ctrl+r refresh · esc quit"),
+  );
 
   process.stdout.write(CLEAR + lines.join("\n") + "\n");
 };
@@ -160,6 +174,7 @@ const renderTUI = (
 type TUIResult =
   | { type: "select"; row: BranchRow; filter: string; cursor: number }
   | { type: "refresh"; filter: string; cursor: number }
+  | { type: "delete"; row: BranchRow; filter: string; cursor: number }
   | { type: "quit" };
 
 const runTUI = (
@@ -167,6 +182,7 @@ const runTUI = (
   initialFilter: string,
   initialCursor: number,
   multi: boolean,
+  deleteMode: boolean,
 ): Promise<TUIResult> => {
   let filter = initialFilter;
   let filteredRows = getFilteredRows(groups, filter);
@@ -175,7 +191,7 @@ const runTUI = (
   process.stdin.resume();
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
 
-  renderTUI(groups, filteredRows, cursor, filter, multi);
+  renderTUI(groups, filteredRows, cursor, filter, multi, deleteMode);
 
   return new Promise<TUIResult>((resolve) => {
     const cleanup = () => {
@@ -184,7 +200,7 @@ const runTUI = (
       if (process.stdin.isTTY) process.stdin.setRawMode(false);
     };
 
-    const rerender = () => renderTUI(groups, filteredRows, cursor, filter, multi);
+    const rerender = () => renderTUI(groups, filteredRows, cursor, filter, multi, deleteMode);
 
     process.stdout.on("resize", rerender);
 
@@ -230,7 +246,11 @@ const runTUI = (
         const row = filteredRows[cursor];
         if (!row) return;
         cleanup();
-        resolve({ type: "select", row, filter, cursor });
+        resolve(
+          deleteMode
+            ? { type: "delete", row, filter, cursor }
+            : { type: "select", row, filter, cursor },
+        );
         return;
       }
 
@@ -248,13 +268,61 @@ const runTUI = (
   });
 };
 
+const deleteWorkstreamFiles = async (items: Workstream[]) => {
+  await Promise.all(items.map((w) => fs.unlink(w.statusFilePath)));
+  const branchesDirs = [...new Set(items.map((w) => path.dirname(w.statusFilePath)))];
+  await Promise.all(
+    branchesDirs.map(async (branchesDir) => {
+      const remaining = await fs.readdir(branchesDir).catch(() => []);
+      if (!remaining.some((f) => f.endsWith(".json"))) {
+        await fs.rm(path.dirname(branchesDir), { recursive: true });
+      }
+    }),
+  );
+};
+
 const run = async () => {
+  const argv = await yargsInit({
+    multi: { type: "boolean", default: false },
+    delete: { type: "string" },
+  }).parseAsync();
+
+  const multi = argv.multi as boolean;
+  const deleteArg = argv["delete"] as string | undefined;
+  const deleteMode = deleteArg !== undefined;
+
+  // Auto-delete: --delete <value> bypasses the TUI entirely
+  if (deleteMode && deleteArg) {
+    process.stdout.write(CLEAR + pc.dim("  Loading…\n"));
+    const allWorkstreams = await listWorkstreams();
+    const groups = groupWorkstreams(allWorkstreams);
+    const rows = getFilteredRows(groups, deleteArg);
+
+    if (rows.length === 0) {
+      process.stderr.write(`No workstreams found matching: ${deleteArg}\n`);
+      process.exit(1);
+    }
+
+    if (rows.length > 1) {
+      process.stderr.write(
+        `Multiple workstreams match "${deleteArg}":\n${rows.map((r) => `  ${r.group.repoName} / ${r.branch.branch}`).join("\n")}\n`,
+      );
+      process.exit(1);
+    }
+
+    const row = rows[0];
+    assert(row);
+    await deleteWorkstreamFiles(row.branch.items);
+    process.stdout.write(
+      CLEAR + pc.dim(`  Deleted ${row.group.repoName} / ${row.branch.branch}\n`),
+    );
+    return;
+  }
+
   if (!process.stdin.isTTY) {
     process.stderr.write("command-center requires an interactive terminal.\n");
     process.exit(1);
   }
-
-  const { multi } = await yargsInit({ multi: { type: "boolean", default: false } }).parseAsync();
 
   readline.emitKeypressEvents(process.stdin);
 
@@ -271,7 +339,7 @@ const run = async () => {
   let cursor = 0;
 
   while (true) {
-    const result = await runTUI(groups, filter, cursor, multi);
+    const result = await runTUI(groups, filter, cursor, multi, deleteMode);
 
     if (result.type === "quit") {
       process.stdout.write(CLEAR);
@@ -293,7 +361,19 @@ const run = async () => {
     const { group, branch } = result.row;
     process.stdout.write(CLEAR);
 
-    // If multiple workstreams in the branch, pick one
+    if (result.type === "delete") {
+      await deleteWorkstreamFiles(branch.items);
+      const updated = await listWorkstreams();
+      groups = groupWorkstreams(updated);
+      if (!groups.length) {
+        process.stdout.write(pc.dim("  No workstreams remaining.\n"));
+        return;
+      }
+      cursor = Math.min(cursor, Math.max(0, getFilteredRows(groups, filter).length - 1));
+      continue;
+    }
+
+    // Normal select mode
     let workstreamId = branch.items[0]?.id;
     if (branch.items.length > 1) {
       const choice = await select({
