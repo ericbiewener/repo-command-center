@@ -11,6 +11,7 @@ import type {
 import { groupWorkstreams } from "../renderer/utils/groupWorkstreams";
 import { listWorkstreams } from "../shared/readStatusFiles";
 import type { AgentKind, WorkstreamStatus } from "../shared/types";
+import { yargsInit } from "./yargs";
 
 const CLEAR = "\x1b[2J\x1b[H";
 
@@ -53,6 +54,18 @@ const fuzzyMatch = (needle: string, haystack: string) => {
   return true;
 };
 
+const COL_SEP = "  ";
+
+const truncate = (s: string, len: number) =>
+  s.length > len ? `${s.slice(0, len - 1)}…` : s.padEnd(len);
+
+const wrapToWidth = (s: string, width: number): string[] => {
+  if (!s) return [];
+  const lines: string[] = [];
+  for (let i = 0; i < s.length; i += width) lines.push(s.slice(i, i + width));
+  return lines;
+};
+
 type BranchRow = { group: WorkstreamRepoGroup; branch: WorkstreamBranchGroup };
 
 const getFilteredRows = (groups: WorkstreamRepoGroup[], filter: string): BranchRow[] =>
@@ -67,37 +80,48 @@ const renderTUI = (
   filteredRows: BranchRow[],
   cursor: number,
   filter: string,
+  multi: boolean,
 ) => {
   const lines: string[] = [];
   const filteredKeys = new Set(filteredRows.map((r) => `${r.group.repoKey}::${r.branch.branch}`));
 
-  lines.push(pc.bgCyan(pc.black(" Command Center ")));
-  lines.push("");
+  const termWidth = process.stdout.columns || 100;
+  const available = termWidth - 2;
+  const branchW = Math.max(20, Math.min(35, Math.floor(available * 0.28)));
+  const titleW = Math.max(20, Math.min(40, Math.floor(available * 0.32)));
+  const summaryW = Math.max(10, available - branchW - titleW - COL_SEP.length * 2);
 
   let rowIdx = 0;
   for (const group of groups) {
     if (!filteredRows.some((r) => r.group.repoKey === group.repoKey)) continue;
 
-    lines.push(`  ${pc.bold(group.repoName)}`);
+    lines.push(`  \x1b[48;5;75m\x1b[1m\x1b[38;2;0;0;0m ${group.repoName} \x1b[0m`);
+    lines.push(`  ${pc.dim("─".repeat(branchW + titleW + summaryW + COL_SEP.length * 2))}`);
 
     for (const branch of group.branches) {
       if (!filteredKeys.has(`${group.repoKey}::${branch.branch}`)) continue;
 
       const isSelected = rowIdx === cursor;
       const mostRecent = branch.items[0];
-      const prefix = isSelected ? pc.cyan("▶ ") : "  ";
-      const branchLabel = isSelected ? pc.bold(pc.cyan(branch.branch)) : pc.cyan(branch.branch);
+      const prefix = isSelected ? pc.green("▶ ") : "  ";
 
-      const meta: string[] = [];
-      if (mostRecent) {
-        meta.push(colorStatus(mostRecent.status));
-        meta.push(colorAgent(mostRecent.agent));
-        const t = relativeTime(mostRecent.updatedAt);
-        if (t) meta.push(t);
+      const branchPadded = truncate(branch.branch, branchW);
+      const titlePadded = truncate(mostRecent?.title ?? "", titleW);
+      const summary = mostRecent?.summary ?? "";
+
+      if (isSelected) {
+        const summaryLines = multi ? wrapToWidth(summary, summaryW) : [truncate(summary, summaryW)];
+        const contIndent = " ".repeat(2 + branchW + COL_SEP.length + titleW + COL_SEP.length);
+        lines.push(
+          `${prefix}${pc.green(branchPadded)}${COL_SEP}${pc.white(titlePadded)}${COL_SEP}${pc.white(summaryLines[0] ?? "")}`,
+        );
+        if (multi)
+          for (const line of summaryLines.slice(1)) lines.push(`${contIndent}${pc.white(line)}`);
+      } else {
+        lines.push(
+          `${prefix}${pc.gray(`${branchPadded}${COL_SEP}${titlePadded}${COL_SEP}${truncate(summary, summaryW)}`)}`,
+        );
       }
-
-      lines.push(`${prefix}${branchLabel}  ${pc.dim(meta.join(" · "))}`);
-      if (mostRecent?.summary) lines.push(`    ${pc.dim(mostRecent.summary)}`);
 
       rowIdx++;
     }
@@ -124,6 +148,7 @@ const runTUI = (
   groups: WorkstreamRepoGroup[],
   initialFilter: string,
   initialCursor: number,
+  multi: boolean,
 ): Promise<TUIResult> => {
   let filter = initialFilter;
   let filteredRows = getFilteredRows(groups, filter);
@@ -132,15 +157,18 @@ const runTUI = (
   process.stdin.resume();
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
 
-  renderTUI(groups, filteredRows, cursor, filter);
+  renderTUI(groups, filteredRows, cursor, filter, multi);
 
   return new Promise<TUIResult>((resolve) => {
     const cleanup = () => {
       process.stdin.off("keypress", onKey);
+      process.stdout.off("resize", rerender);
       if (process.stdin.isTTY) process.stdin.setRawMode(false);
     };
 
-    const rerender = () => renderTUI(groups, filteredRows, cursor, filter);
+    const rerender = () => renderTUI(groups, filteredRows, cursor, filter, multi);
+
+    process.stdout.on("resize", rerender);
 
     const updateFilter = (newFilter: string) => {
       filter = newFilter;
@@ -202,6 +230,8 @@ const run = async () => {
     process.exit(1);
   }
 
+  const { multi } = await yargsInit({ multi: { type: "boolean", default: false } }).parseAsync();
+
   readline.emitKeypressEvents(process.stdin);
 
   process.stdout.write(CLEAR + pc.dim("  Loading…\n"));
@@ -217,7 +247,7 @@ const run = async () => {
   let cursor = 0;
 
   while (true) {
-    const result = await runTUI(groups, filter, cursor);
+    const result = await runTUI(groups, filter, cursor, multi);
 
     if (result.type === "quit") {
       process.stdout.write(CLEAR);
