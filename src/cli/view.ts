@@ -198,6 +198,7 @@ const runTUI = (
       process.stdin.off("keypress", onKey);
       process.stdout.off("resize", rerender);
       if (process.stdin.isTTY) process.stdin.setRawMode(false);
+      process.stdin.pause();
     };
 
     const rerender = () => renderTUI(groups, filteredRows, cursor, filter, multi, deleteMode);
