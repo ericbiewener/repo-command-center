@@ -11,8 +11,8 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "pnpm build:cli && electron-vite build",
-    "build:cli": "tsup src/cli/ai-work-status.ts src/cli/view.ts --format esm --platform node --target node20 --out-dir dist/cli --clean && chmod +x dist/cli/ai-work-status.js dist/cli/view.js",
-    "build:cli:watch": "tsup src/cli/ai-work-status.ts src/cli/view.ts --format esm --platform node --target node20 --out-dir dist/cli --clean --watch --onSuccess \"chmod +x dist/cli/ai-work-status.js dist/cli/view.js\"",
+    "build:cli": "tsup src/cli/ai-work-status.ts src/cli/view.ts src/cli/select-action.ts --format esm --platform node --target node20 --out-dir dist/cli --clean && chmod +x dist/cli/ai-work-status.js dist/cli/view.js dist/cli/select-action.js",
+    "build:cli:watch": "tsup src/cli/ai-work-status.ts src/cli/view.ts src/cli/select-action.ts --format esm --platform node --target node20 --out-dir dist/cli --clean --watch --onSuccess \"chmod +x dist/cli/ai-work-status.js dist/cli/view.js dist/cli/select-action.js\"",
     "dev:cli": "npx tsx --watch src/cli/view.ts",
     "test": "vitest run",
     "test:watch": "vitest",
