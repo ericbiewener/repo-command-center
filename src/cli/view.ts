@@ -53,6 +53,11 @@ const fuzzyMatch = (needle: string, haystack: string) => {
   return true;
 };
 
+const COL_SEP = "  ";
+
+const truncate = (s: string, len: number) =>
+  s.length > len ? `${s.slice(0, len - 1)}…` : s.padEnd(len);
+
 type BranchRow = { group: WorkstreamRepoGroup; branch: WorkstreamBranchGroup };
 
 const getFilteredRows = (groups: WorkstreamRepoGroup[], filter: string): BranchRow[] =>
@@ -71,6 +76,12 @@ const renderTUI = (
   const lines: string[] = [];
   const filteredKeys = new Set(filteredRows.map((r) => `${r.group.repoKey}::${r.branch.branch}`));
 
+  const termWidth = process.stdout.columns || 100;
+  const available = termWidth - 2;
+  const branchW = Math.max(20, Math.min(35, Math.floor(available * 0.28)));
+  const titleW = Math.max(20, Math.min(40, Math.floor(available * 0.32)));
+  const summaryW = Math.max(10, available - branchW - titleW - COL_SEP.length * 2);
+
   lines.push(pc.bgCyan(pc.black(" Command Center ")));
   lines.push("");
 
@@ -78,26 +89,24 @@ const renderTUI = (
   for (const group of groups) {
     if (!filteredRows.some((r) => r.group.repoKey === group.repoKey)) continue;
 
-    lines.push(`  ${pc.bold(group.repoName)}`);
+    lines.push(`  ${pc.bold(pc.blueBright(group.repoName))}`);
+    lines.push(`  ${pc.dim("─".repeat(branchW + titleW + summaryW + COL_SEP.length * 2))}`);
 
     for (const branch of group.branches) {
       if (!filteredKeys.has(`${group.repoKey}::${branch.branch}`)) continue;
 
       const isSelected = rowIdx === cursor;
       const mostRecent = branch.items[0];
-      const prefix = isSelected ? pc.cyan("▶ ") : "  ";
-      const branchLabel = isSelected ? pc.bold(pc.cyan(branch.branch)) : pc.cyan(branch.branch);
+      const prefix = isSelected ? pc.green("▶ ") : "  ";
 
-      const meta: string[] = [];
-      if (mostRecent) {
-        meta.push(colorStatus(mostRecent.status));
-        meta.push(colorAgent(mostRecent.agent));
-        const t = relativeTime(mostRecent.updatedAt);
-        if (t) meta.push(t);
-      }
+      const branchPadded = truncate(branch.branch, branchW);
+      const titlePadded = truncate(mostRecent?.title ?? "", titleW);
+      const summaryPadded = truncate(mostRecent?.summary ?? "", summaryW);
 
-      lines.push(`${prefix}${branchLabel}  ${pc.dim(meta.join(" · "))}`);
-      if (mostRecent?.summary) lines.push(`    ${pc.dim(mostRecent.summary)}`);
+      const row = isSelected
+        ? `${pc.green(branchPadded)}${COL_SEP}${pc.white(titlePadded)}${COL_SEP}${pc.white(summaryPadded)}`
+        : pc.gray(`${branchPadded}${COL_SEP}${titlePadded}${COL_SEP}${summaryPadded}`);
+      lines.push(`${prefix}${row}`);
 
       rowIdx++;
     }
@@ -137,10 +146,13 @@ const runTUI = (
   return new Promise<TUIResult>((resolve) => {
     const cleanup = () => {
       process.stdin.off("keypress", onKey);
+      process.stdout.off("resize", rerender);
       if (process.stdin.isTTY) process.stdin.setRawMode(false);
     };
 
     const rerender = () => renderTUI(groups, filteredRows, cursor, filter);
+
+    process.stdout.on("resize", rerender);
 
     const updateFilter = (newFilter: string) => {
       filter = newFilter;
