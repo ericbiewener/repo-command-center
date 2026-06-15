@@ -56,15 +56,22 @@ const fuzzyMatch = (needle: string, haystack: string) => {
   return true;
 };
 
-const COL_SEP = "  ";
+const COL_SEP = "    ";
 
 const truncate = (s: string, len: number) =>
   s.length > len ? `${s.slice(0, len - 1)}…` : s.padEnd(len);
 
 const wrapToWidth = (s: string, width: number): string[] => {
-  if (!s) return [];
+  if (!s || width <= 0) return [];
   const lines: string[] = [];
-  for (let i = 0; i < s.length; i += width) lines.push(s.slice(i, i + width));
+  let remaining = s.trim();
+  while (remaining.length > width) {
+    let breakAt = remaining.lastIndexOf(" ", width);
+    if (breakAt < 1) breakAt = width;
+    lines.push(remaining.slice(0, breakAt));
+    remaining = remaining.slice(breakAt).trimStart();
+  }
+  if (remaining) lines.push(remaining);
   return lines;
 };
 
@@ -96,16 +103,22 @@ const renderTUI = (
 
   const termWidth = process.stdout.columns || 100;
   const available = termWidth - 2;
-  const branchW = Math.max(20, Math.min(35, Math.floor(available * 0.28)));
-  const titleW = Math.max(20, Math.min(40, Math.floor(available * 0.32)));
-  const summaryW = Math.max(10, available - branchW - titleW - COL_SEP.length * 2);
+  const branchWMax = Math.max(20, Math.min(35, Math.floor(available * 0.28)));
+  const branchW = Math.min(
+    branchWMax,
+    filteredRows.reduce((max, r) => Math.max(max, r.branch.branch.length), 0),
+  );
+  const titleW = filteredRows.reduce(
+    (max, r) => Math.max(max, r.branch.items[0]?.title?.length ?? 0),
+    0,
+  );
 
   let rowIdx = 0;
   for (const group of groups) {
     if (!filteredRows.some((r) => r.group.repoKey === group.repoKey)) continue;
 
     lines.push(`  \x1b[48;5;75m\x1b[1m\x1b[38;2;0;0;0m ${group.repoName} \x1b[0m`);
-    lines.push(`  ${pc.dim("─".repeat(branchW + titleW + summaryW + COL_SEP.length * 2))}`);
+    lines.push(`  ${pc.dim("─".repeat(available))}`);
 
     for (const branch of group.branches) {
       if (!filteredKeys.has(`${group.repoKey}::${branch.branch}`)) continue;
@@ -115,21 +128,25 @@ const renderTUI = (
       const prefix = isSelected ? (deleteMode ? pc.red("▶ ") : pc.green("▶ ")) : "  ";
 
       const branchPadded = truncate(branch.branch, branchW);
-      const titlePadded = truncate(mostRecent?.title ?? "", titleW);
+      const title = (mostRecent?.title ?? "").padEnd(titleW);
       const summary = mostRecent?.summary ?? "";
+      const summaryW = Math.max(0, available - branchW - COL_SEP.length - titleW - COL_SEP.length);
 
       if (isSelected) {
-        const summaryLines = multi ? wrapToWidth(summary, summaryW) : [truncate(summary, summaryW)];
-        const contIndent = " ".repeat(2 + branchW + COL_SEP.length + titleW + COL_SEP.length);
         const selectedColor = deleteMode ? pc.red : pc.green;
-        lines.push(
-          `${prefix}${selectedColor(branchPadded)}${COL_SEP}${pc.white(titlePadded)}${COL_SEP}${pc.white(summaryLines[0] ?? "")}`,
-        );
-        if (multi)
-          for (const line of summaryLines.slice(1)) lines.push(`${contIndent}${pc.white(line)}`);
+        if (multi) {
+          lines.push(`${prefix}${selectedColor(branchPadded)}${COL_SEP}${pc.white(title)}`);
+          lines.push("");
+          for (const line of wrapToWidth(summary, available)) lines.push(`  ${pc.white(line)}`);
+          lines.push("");
+        } else {
+          lines.push(
+            `${prefix}${selectedColor(branchPadded)}${COL_SEP}${pc.white(title)}${COL_SEP}${pc.white(truncate(summary, summaryW))}`,
+          );
+        }
       } else {
         lines.push(
-          `${prefix}${pc.gray(`${branchPadded}${COL_SEP}${titlePadded}${COL_SEP}${truncate(summary, summaryW)}`)}`,
+          `${prefix}${pc.gray(`${branchPadded}${COL_SEP}${title}${COL_SEP}${truncate(summary, summaryW)}`)}`,
         );
       }
 
@@ -148,7 +165,7 @@ const renderTUI = (
   lines.push(
     deleteMode
       ? pc.dim("  ↑↓ navigate · enter delete · esc quit")
-      : pc.dim("  ↑↓ navigate · enter select · esc quit"),
+      : pc.dim("  ↑↓ navigate · enter select · ctrl+r refresh · esc quit"),
   );
 
   process.stdout.write(CLEAR + lines.join("\n") + "\n");
@@ -156,6 +173,7 @@ const renderTUI = (
 
 type TUIResult =
   | { type: "select"; row: BranchRow; filter: string; cursor: number }
+  | { type: "refresh"; filter: string; cursor: number }
   | { type: "delete"; row: BranchRow; filter: string; cursor: number }
   | { type: "quit" };
 
@@ -202,6 +220,12 @@ const runTUI = (
       if ((key.ctrl && key.name === "c") || key.name === "escape") {
         cleanup();
         resolve({ type: "quit" });
+        return;
+      }
+
+      if (key.ctrl && key.name === "r") {
+        cleanup();
+        resolve({ type: "refresh", filter, cursor });
         return;
       }
 
@@ -320,6 +344,15 @@ const run = async () => {
     if (result.type === "quit") {
       process.stdout.write(CLEAR);
       return;
+    }
+
+    if (result.type === "refresh") {
+      filter = result.filter;
+      cursor = result.cursor;
+      process.stdout.write(CLEAR + pc.dim("  Refreshing…\n"));
+      const allWorkstreams = await listWorkstreams();
+      groups = groupWorkstreams(allWorkstreams);
+      continue;
     }
 
     filter = result.filter;
