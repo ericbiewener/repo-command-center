@@ -109,6 +109,7 @@ const renderTUI = (
     if (!filteredRows.some((r) => r.group.repoKey === group.repoKey)) continue;
 
     lines.push(`  \x1b[48;5;75m\x1b[1m\x1b[38;2;0;0;0m ${group.repoName} \x1b[0m`);
+    lines.push(`  ${pc.dim("─".repeat(available))}`);
 
     for (const branch of group.branches) {
       if (!filteredKeys.has(`${group.repoKey}::${branch.branch}`)) continue;
@@ -123,13 +124,16 @@ const renderTUI = (
       const summaryW = Math.max(0, available - branchW - COL_SEP.length - titleW - COL_SEP.length);
 
       if (isSelected) {
-        const summaryLines = multi ? wrapToWidth(summary, summaryW) : [truncate(summary, summaryW)];
-        const contIndent = " ".repeat(2 + branchW + COL_SEP.length + titleW + COL_SEP.length);
-        lines.push(
-          `${prefix}${pc.green(branchPadded)}${COL_SEP}${pc.white(title)}${COL_SEP}${pc.white(summaryLines[0] ?? "")}`,
-        );
-        if (multi)
-          for (const line of summaryLines.slice(1)) lines.push(`${contIndent}${pc.white(line)}`);
+        if (multi) {
+          lines.push(`${prefix}${pc.green(branchPadded)}${COL_SEP}${pc.white(title)}`);
+          lines.push("");
+          for (const line of wrapToWidth(summary, available)) lines.push(`  ${pc.white(line)}`);
+          lines.push("");
+        } else {
+          lines.push(
+            `${prefix}${pc.green(branchPadded)}${COL_SEP}${pc.white(title)}${COL_SEP}${pc.white(truncate(summary, summaryW))}`,
+          );
+        }
       } else {
         lines.push(
           `${prefix}${pc.gray(`${branchPadded}${COL_SEP}${title}${COL_SEP}${truncate(summary, summaryW)}`)}`,
