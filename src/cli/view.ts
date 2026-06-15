@@ -3,7 +3,7 @@ import assert from "node:assert";
 import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
-import { isCancel, note, select } from "@clack/prompts";
+import { isCancel, select } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
 import type {
@@ -13,6 +13,7 @@ import type {
 import { groupWorkstreams } from "../renderer/utils/groupWorkstreams";
 import { listWorkstreams } from "../shared/readStatusFiles";
 import type { AgentKind, Workstream, WorkstreamStatus } from "../shared/types";
+import { readSettings } from "./settings";
 import { yargsInit } from "./yargs";
 
 const CLEAR = "\x1b[2J\x1b[H";
@@ -73,6 +74,17 @@ const wrapToWidth = (s: string, width: number): string[] => {
   }
   if (remaining) lines.push(remaining);
   return lines;
+};
+
+const toEnvKey = (camel: string) => `WORK_STATUS_${camel.replace(/([A-Z])/g, "_$1").toUpperCase()}`;
+
+const buildEnvVars = (workstream: Workstream): Record<string, string> => {
+  const vars: Record<string, string> = {};
+  for (const [key, value] of Object.entries(workstream)) {
+    if (value === null || value === undefined || typeof value === "object") continue;
+    vars[toEnvKey(key)] = String(value);
+  }
+  return vars;
 };
 
 type BranchRow = { group: WorkstreamRepoGroup; branch: WorkstreamBranchGroup };
@@ -282,12 +294,12 @@ const deleteWorkstreamFiles = async (items: Workstream[]) => {
 };
 
 const run = async () => {
-  const argv = await yargsInit({
-    multi: { type: "boolean", default: false },
-    delete: { type: "string" },
-  }).parseAsync();
+  const [argv, settings] = await Promise.all([
+    yargsInit({ delete: { type: "string" } }).parseAsync(),
+    readSettings(),
+  ]);
 
-  const multi = argv.multi as boolean;
+  const multi = settings.multiline ?? false;
   const deleteArg = argv["delete"] as string | undefined;
   const deleteMode = deleteArg !== undefined;
 
@@ -391,39 +403,19 @@ const run = async () => {
     const workstream = branch.items.find((w) => w.id === workstreamId);
     assert(workstream, "Workstream not found");
 
-    note(
-      [
-        `${pc.dim("repo")}    ${pc.bold(workstream.repoName)}`,
-        `${pc.dim("branch")}  ${pc.cyan(workstream.branch)}`,
-        `${pc.dim("status")}  ${colorStatus(workstream.status)}`,
-        `${pc.dim("agent")}   ${colorAgent(workstream.agent)}`,
-        ...(workstream.summary ? [`${pc.dim("summary")} ${workstream.summary}`] : []),
-        `${pc.dim("updated")} ${relativeTime(workstream.updatedAt)}`,
-      ].join("\n"),
-      workstream.title ?? `${workstream.repoName}/${workstream.branch}`,
-    );
+    if (!settings.action) {
+      process.stderr.write(
+        pc.yellow('No action configured. Add an "action" to ~/.ai-work-status/settings.json\n'),
+      );
+      return;
+    }
 
-    const action = await select({
-      message: "Action:",
-      options: [
-        { value: "vscode", label: "Open in VS Code" },
-        { value: "back", label: "↩ Back to list" },
-        { value: "quit", label: "Quit" },
-      ],
+    await execa(settings.action, {
+      env: { ...process.env, ...buildEnvVars(workstream) },
+      shell: true,
+      stdio: "inherit",
     });
-
-    if (isCancel(action) || action === "quit") {
-      process.stdout.write(pc.dim("\nGoodbye.\n"));
-      return;
-    }
-
-    if (action === "back") continue;
-
-    if (action === "vscode" && workstream.repoPath) {
-      await execa("code", [workstream.repoPath]);
-      process.stdout.write(pc.dim(`\nOpened ${workstream.repoName} in VS Code.\n`));
-      return;
-    }
+    return;
   }
 };
 
