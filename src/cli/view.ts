@@ -11,6 +11,7 @@ import type {
 import { groupWorkstreams } from "../renderer/utils/groupWorkstreams";
 import { listWorkstreams } from "../shared/readStatusFiles";
 import type { AgentKind, WorkstreamStatus } from "../shared/types";
+import { yargsInit } from "./yargs";
 
 const CLEAR = "\x1b[2J\x1b[H";
 
@@ -58,6 +59,13 @@ const COL_SEP = "  ";
 const truncate = (s: string, len: number) =>
   s.length > len ? `${s.slice(0, len - 1)}…` : s.padEnd(len);
 
+const wrapToWidth = (s: string, width: number): string[] => {
+  if (!s) return [];
+  const lines: string[] = [];
+  for (let i = 0; i < s.length; i += width) lines.push(s.slice(i, i + width));
+  return lines;
+};
+
 type BranchRow = { group: WorkstreamRepoGroup; branch: WorkstreamBranchGroup };
 
 const getFilteredRows = (groups: WorkstreamRepoGroup[], filter: string): BranchRow[] =>
@@ -72,6 +80,7 @@ const renderTUI = (
   filteredRows: BranchRow[],
   cursor: number,
   filter: string,
+  multi: boolean,
 ) => {
   const lines: string[] = [];
   const filteredKeys = new Set(filteredRows.map((r) => `${r.group.repoKey}::${r.branch.branch}`));
@@ -82,14 +91,11 @@ const renderTUI = (
   const titleW = Math.max(20, Math.min(40, Math.floor(available * 0.32)));
   const summaryW = Math.max(10, available - branchW - titleW - COL_SEP.length * 2);
 
-  lines.push(pc.bgCyan(pc.black(" Command Center ")));
-  lines.push("");
-
   let rowIdx = 0;
   for (const group of groups) {
     if (!filteredRows.some((r) => r.group.repoKey === group.repoKey)) continue;
 
-    lines.push(`  ${pc.bold(pc.blueBright(group.repoName))}`);
+    lines.push(`  \x1b[48;5;75m\x1b[1m\x1b[38;2;0;0;0m ${group.repoName} \x1b[0m`);
     lines.push(`  ${pc.dim("─".repeat(branchW + titleW + summaryW + COL_SEP.length * 2))}`);
 
     for (const branch of group.branches) {
@@ -101,12 +107,21 @@ const renderTUI = (
 
       const branchPadded = truncate(branch.branch, branchW);
       const titlePadded = truncate(mostRecent?.title ?? "", titleW);
-      const summaryPadded = truncate(mostRecent?.summary ?? "", summaryW);
+      const summary = mostRecent?.summary ?? "";
 
-      const row = isSelected
-        ? `${pc.green(branchPadded)}${COL_SEP}${pc.white(titlePadded)}${COL_SEP}${pc.white(summaryPadded)}`
-        : pc.gray(`${branchPadded}${COL_SEP}${titlePadded}${COL_SEP}${summaryPadded}`);
-      lines.push(`${prefix}${row}`);
+      if (isSelected) {
+        const summaryLines = multi ? wrapToWidth(summary, summaryW) : [truncate(summary, summaryW)];
+        const contIndent = " ".repeat(2 + branchW + COL_SEP.length + titleW + COL_SEP.length);
+        lines.push(
+          `${prefix}${pc.green(branchPadded)}${COL_SEP}${pc.white(titlePadded)}${COL_SEP}${pc.white(summaryLines[0] ?? "")}`,
+        );
+        if (multi)
+          for (const line of summaryLines.slice(1)) lines.push(`${contIndent}${pc.white(line)}`);
+      } else {
+        lines.push(
+          `${prefix}${pc.gray(`${branchPadded}${COL_SEP}${titlePadded}${COL_SEP}${truncate(summary, summaryW)}`)}`,
+        );
+      }
 
       rowIdx++;
     }
@@ -133,6 +148,7 @@ const runTUI = (
   groups: WorkstreamRepoGroup[],
   initialFilter: string,
   initialCursor: number,
+  multi: boolean,
 ): Promise<TUIResult> => {
   let filter = initialFilter;
   let filteredRows = getFilteredRows(groups, filter);
@@ -141,7 +157,7 @@ const runTUI = (
   process.stdin.resume();
   if (process.stdin.isTTY) process.stdin.setRawMode(true);
 
-  renderTUI(groups, filteredRows, cursor, filter);
+  renderTUI(groups, filteredRows, cursor, filter, multi);
 
   return new Promise<TUIResult>((resolve) => {
     const cleanup = () => {
@@ -150,7 +166,7 @@ const runTUI = (
       if (process.stdin.isTTY) process.stdin.setRawMode(false);
     };
 
-    const rerender = () => renderTUI(groups, filteredRows, cursor, filter);
+    const rerender = () => renderTUI(groups, filteredRows, cursor, filter, multi);
 
     process.stdout.on("resize", rerender);
 
@@ -214,6 +230,8 @@ const run = async () => {
     process.exit(1);
   }
 
+  const { multi } = await yargsInit({ multi: { type: "boolean", default: false } }).parseAsync();
+
   readline.emitKeypressEvents(process.stdin);
 
   process.stdout.write(CLEAR + pc.dim("  Loading…\n"));
@@ -229,7 +247,7 @@ const run = async () => {
   let cursor = 0;
 
   while (true) {
-    const result = await runTUI(groups, filter, cursor);
+    const result = await runTUI(groups, filter, cursor, multi);
 
     if (result.type === "quit") {
       process.stdout.write(CLEAR);
