@@ -24,4 +24,4 @@ if (!worktreePath) {
   await execa("git", ["checkout", branch], { cwd: repoPath, stdio: "inherit" });
 }
 
-await execa("code", [targetPath]);
+process.stdout.write(`cd ${targetPath}`);
