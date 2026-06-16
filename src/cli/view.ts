@@ -180,7 +180,7 @@ const renderTUI = (
       : pc.dim("  ↑↓ navigate · enter select · ⌫ delete · ctrl+r refresh · esc quit"),
   );
 
-  process.stdout.write(CLEAR + lines.join("\n") + "\n");
+  process.stderr.write(CLEAR + lines.join("\n") + "\n");
 };
 
 type TUIResult =
@@ -314,7 +314,7 @@ const run = async () => {
 
   // Auto-delete: --delete <value> bypasses the TUI entirely
   if (deleteMode && deleteArg) {
-    process.stdout.write(CLEAR + pc.dim("  Loading…\n"));
+    process.stderr.write(CLEAR + pc.dim("  Loading…\n"));
     const allWorkstreams = await listWorkstreams();
     const groups = groupWorkstreams(allWorkstreams);
     const rows = getFilteredRows(groups, deleteArg);
@@ -334,7 +334,7 @@ const run = async () => {
     const row = rows[0];
     assert(row);
     await deleteWorkstreamFiles(row.branch.items);
-    process.stdout.write(
+    process.stderr.write(
       CLEAR + pc.dim(`  Deleted ${row.group.repoName} / ${row.branch.branch}\n`),
     );
     return;
@@ -347,12 +347,12 @@ const run = async () => {
 
   readline.emitKeypressEvents(process.stdin);
 
-  process.stdout.write(CLEAR + pc.dim("  Loading…\n"));
+  process.stderr.write(CLEAR + pc.dim("  Loading…\n"));
   const allWorkstreams = await listWorkstreams();
   let groups = groupWorkstreams(allWorkstreams);
 
   if (!groups.length) {
-    process.stdout.write(CLEAR + pc.dim("  No workstreams found.\n"));
+    process.stderr.write(CLEAR + pc.dim("  No workstreams found.\n"));
     return;
   }
 
@@ -363,14 +363,14 @@ const run = async () => {
     const result = await runTUI(groups, filter, cursor, multi, deleteMode);
 
     if (result.type === "quit") {
-      process.stdout.write(CLEAR);
+      process.stderr.write(CLEAR);
       return;
     }
 
     if (result.type === "refresh") {
       filter = result.filter;
       cursor = result.cursor;
-      process.stdout.write(CLEAR + pc.dim("  Refreshing…\n"));
+      process.stderr.write(CLEAR + pc.dim("  Refreshing…\n"));
       const allWorkstreams = await listWorkstreams();
       groups = groupWorkstreams(allWorkstreams);
       continue;
@@ -380,14 +380,14 @@ const run = async () => {
     cursor = result.cursor;
 
     const { group, branch } = result.row;
-    process.stdout.write(CLEAR);
+    process.stderr.write(CLEAR);
 
     if (result.type === "delete") {
       await deleteWorkstreamFiles(branch.items);
       const updated = await listWorkstreams();
       groups = groupWorkstreams(updated);
       if (!groups.length) {
-        process.stdout.write(pc.dim("  No workstreams remaining.\n"));
+        process.stderr.write(pc.dim("  No workstreams remaining.\n"));
         return;
       }
       cursor = Math.min(cursor, Math.max(0, getFilteredRows(groups, filter).length - 1));
