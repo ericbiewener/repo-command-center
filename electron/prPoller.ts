@@ -44,7 +44,6 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
       [
         "pr",
         "view",
-        "--head",
         workstream.branch,
         "--repo",
         repoArg,
