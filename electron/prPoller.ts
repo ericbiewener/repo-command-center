@@ -99,6 +99,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("no pull requests found")) return null;
     return { fetchError: message };
   }
 };
