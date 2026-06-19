@@ -43,8 +43,7 @@ const StatusGroup = ({ group, onOpenRepo, customActions }: StatusGroupProps) => 
           <tr>
             <th>Branch</th>
             <th>Status</th>
-            <th title="Uncommitted files">Uncommitted</th>
-            <th title="Unpushed commits">Unpushed</th>
+            <th title="Uncommitted files or unpushed commits">Local changes</th>
             <th>PR</th>
             <th>CI</th>
             <th>Actions</th>

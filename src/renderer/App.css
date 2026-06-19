@@ -325,13 +325,15 @@ code {
   color: #6f2b19;
 }
 
-/* Git count badges */
+/* Local changes dot */
 
-.git-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  color: #5f5b51;
+.local-changes-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22d4d4;
+  flex-shrink: 0;
 }
 
 /* PR column */

@@ -1,4 +1,4 @@
-import { AlertCircle, FileEdit, FileWarning, GitMerge, GitPullRequest, Upload } from "lucide-react";
+import { AlertCircle, FileWarning, GitMerge, GitPullRequest } from "lucide-react";
 import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
 import type { Workstream } from "../../shared/types";
@@ -53,30 +53,24 @@ const WorkstreamCard = ({ workstream, onOpenRepo, customActions }: WorkstreamCar
         </span>
       </td>
 
-      <td className="col-uncommitted">
-        {gitStatus !== null ? (
-          <span className="git-count" title={`${gitStatus.uncommittedCount} uncommitted files`}>
-            <FileEdit size={11} />
-            {gitStatus.uncommittedCount}
-          </span>
-        ) : (
-          "—"
-        )}
-      </td>
-
-      <td className="col-unpushed">
-        {gitStatus !== null ? (
-          gitStatus.unpushedCount === null ? (
-            <span title="No upstream branch">—</span>
-          ) : (
-            <span className="git-count" title={`${gitStatus.unpushedCount} unpushed commits`}>
-              <Upload size={11} />
-              {gitStatus.unpushedCount}
-            </span>
-          )
-        ) : (
-          "—"
-        )}
+      <td className="col-local-changes">
+        {gitStatus !== null &&
+        (gitStatus.uncommittedCount > 0 ||
+          (gitStatus.unpushedCount !== null && gitStatus.unpushedCount > 0)) ? (
+          <span
+            role="img"
+            className="local-changes-dot"
+            aria-label="Has local changes"
+            title={[
+              gitStatus.uncommittedCount > 0 ? `${gitStatus.uncommittedCount} uncommitted` : null,
+              gitStatus.unpushedCount !== null && gitStatus.unpushedCount > 0
+                ? `${gitStatus.unpushedCount} unpushed`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(", ")}
+          />
+        ) : null}
       </td>
 
       <td className="col-pr">
