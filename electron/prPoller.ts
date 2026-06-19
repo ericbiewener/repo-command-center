@@ -20,14 +20,37 @@ const parseGitHubRemote = (remote: string): GitHubRemote | null => {
 
 type CiStatus = "passing" | "failing" | "pending" | "error";
 
-const mapCiStatus = (rollup: Array<{ state: string }>): CiStatus =>
-  rollup.some((c) => c.state === "FAILURE")
-    ? "failing"
-    : rollup.some((c) => c.state === "IN_PROGRESS" || c.state === "PENDING")
-      ? "pending"
-      : rollup.length > 0 && rollup.every((c) => c.state === "SUCCESS")
-        ? "passing"
-        : "error";
+// States that mean the check didn't actually run — safe to ignore.
+const IGNORED_STATES = new Set(["SKIPPED", "NEUTRAL", "STALE"]);
+
+const mapCiStatus = (rollup: Array<{ state: string }>): CiStatus => {
+  const active = rollup.filter((c) => !IGNORED_STATES.has(c.state));
+
+  if (
+    active.some(
+      (c) =>
+        c.state === "FAILURE" ||
+        c.state === "TIMED_OUT" ||
+        c.state === "STARTUP_FAILURE" ||
+        c.state === "ACTION_REQUIRED" ||
+        c.state === "CANCELLED" ||
+        c.state === "ERROR",
+    )
+  )
+    return "failing";
+  if (
+    active.some(
+      (c) =>
+        c.state === "IN_PROGRESS" ||
+        c.state === "PENDING" ||
+        c.state === "WAITING" ||
+        c.state === "EXPECTED",
+    )
+  )
+    return "pending";
+  if (active.length === 0 || active.every((c) => c.state === "SUCCESS")) return "passing";
+  return "error";
+};
 
 const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
   const ghRemote = parseGitHubRemote(workstream.repoRemote);
