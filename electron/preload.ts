@@ -5,6 +5,16 @@ contextBridge.exposeInMainWorld("appApi", {
   openInVSCode: (repoPath: string) => ipcRenderer.invoke("vscode:open", repoPath),
   getAppInfo: () => ipcRenderer.invoke("app:info"),
   hideWindow: () => ipcRenderer.invoke("window:hide"),
+  getCustomActions: () => ipcRenderer.invoke("settings:getCustomActions"),
+  openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
+  executeCustomAction: (actionIndex: number, repoPath: string) =>
+    ipcRenderer.invoke("customActions:execute", actionIndex, repoPath),
+  createWorktree: (params: {
+    repoPath: string;
+    branch: string;
+    prompt?: string;
+    agent?: "claude" | "codex";
+  }) => ipcRenderer.invoke("worktree:create", params),
   onWorkstreamsUpdated: (callback: () => void) => {
     const listener = () => callback();
 

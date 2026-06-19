@@ -1,8 +1,11 @@
-import { app, type BrowserWindow, globalShortcut, type Tray } from "electron";
+import type { ChildProcess } from "node:child_process";
+import { app, type BrowserWindow, globalShortcut, Notification, type Tray } from "electron";
 import { getStatusBaseDir } from "../src/shared/paths";
-import type { ServerInfo } from "../src/shared/types";
+import { readSettings } from "../src/shared/settings";
+import type { ServerInfo, Workstream } from "../src/shared/types";
 import { registerIpc } from "./ipc";
 import { startLocalApiServer } from "./localApiServer";
+import { createPrPoller } from "./prPoller";
 import { createTray } from "./tray";
 import { createDashboardWindow } from "./window";
 
@@ -14,6 +17,12 @@ let closeLocalApi: (() => Promise<void>) | null = null;
 let lastBlurHideAt = 0;
 
 const isDevelopment = Boolean(process.env.ELECTRON_RENDERER_URL);
+
+// Shared mutable reference so the IPC handler and poller stay in sync
+const cachedWorkstreams: { value: Workstream[] } = { value: [] };
+
+// Active agent process handles — supports concurrent creates
+const activeAgents: Array<{ process: ChildProcess; branch: string }> = [];
 
 const refreshWorkstreams = () => {
   dashboardWindow?.webContents.send("workstreams:updated");
@@ -54,6 +63,18 @@ const getAppInfo = () => ({
       },
 });
 
+const prPoller = createPrPoller(refreshWorkstreams);
+
+// Leading-edge debounce for dashboard:shown PR/CI refresh
+let prRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+const debouncedPrRefresh = () => {
+  if (prRefreshTimer) return;
+  prRefreshTimer = setTimeout(() => {
+    prRefreshTimer = null;
+    void prPoller.fetchAll(cachedWorkstreams.value);
+  }, 2_000);
+};
+
 app.whenReady().then(async () => {
   if (!isDevelopment) {
     app.dock?.hide();
@@ -65,6 +86,10 @@ app.whenReady().then(async () => {
     },
     showOnReady: isDevelopment,
   });
+
+  // Refresh PR/CI when dashboard is brought to foreground (debounced)
+  dashboardWindow.on("focus", debouncedPrRefresh);
+
   tray = createTray(toggleDashboard, refreshWorkstreams);
   shortcutRegistered = globalShortcut.register("CommandOrControl+Alt+Space", showDashboard);
 
@@ -72,10 +97,54 @@ app.whenReady().then(async () => {
     console.warn("Could not register global shortcut CommandOrControl+Alt+Space.");
   }
 
+  const settings = await readSettings();
+
   registerIpc({
     getAppInfo,
     hideWindow: () => dashboardWindow?.hide(),
+    prPoller,
+    cachedWorkstreams,
+    onAgentSpawned: ({ process: agentProcess, branch }) => {
+      const handle = { process: agentProcess, branch };
+      activeAgents.push(handle);
+
+      agentProcess.once("close", async () => {
+        const idx = activeAgents.indexOf(handle);
+        if (idx !== -1) activeAgents.splice(idx, 1);
+
+        if (!Notification.isSupported()) return;
+
+        const notification = new Notification({
+          title: "Agent done",
+          body: `Branch: ${branch}`,
+        });
+
+        notification.once("click", () => {
+          const clickCmd = readSettings().then((s) => s.notificationClickCommand);
+          void clickCmd.then((cmd) => {
+            if (cmd) {
+              const { spawn } =
+                require("node:child_process") as typeof import("node:child_process");
+              const child = spawn("sh", ["-c", cmd], { stdio: "ignore" });
+              child.once("close", (code: number | null) => {
+                if (code !== 0) showDashboard();
+              });
+              child.once("error", () => showDashboard());
+              child.unref();
+            } else {
+              showDashboard();
+            }
+          });
+        });
+
+        notification.show();
+      });
+    },
   });
+
+  // Start PR/CI polling after settings are loaded; delay first tick until workstreams are cached
+  const pollIntervalMs = (settings.prPollIntervalSeconds ?? 60) * 1_000;
+  const stopPolling = prPoller.startPolling(() => cachedWorkstreams.value, pollIntervalMs);
 
   await startLocalApiServer(refreshWorkstreams)
     .then((server) => {
@@ -93,6 +162,8 @@ app.whenReady().then(async () => {
     .catch((error: unknown) => {
       console.error("Could not start local API server.", error);
     });
+
+  return stopPolling;
 });
 
 app.on("activate", () => {
