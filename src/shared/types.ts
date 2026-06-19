@@ -49,7 +49,12 @@ export type WorkstreamStatus =
 export type AgentKind = "claude" | "codex" | "other" | "unknown";
 
 export type PrInfo =
-  | { number: number; url: string; ciStatus: "passing" | "failing" | "pending" | "error" }
+  | {
+      number: number;
+      url: string;
+      ciStatus: "passing" | "failing" | "pending" | "error";
+      merged: boolean;
+    }
   | { fetchError: string };
 
 export type Workstream = {

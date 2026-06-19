@@ -1,4 +1,4 @@
-import { AlertCircle, FileEdit, FileWarning, GitPullRequest, Upload } from "lucide-react";
+import { AlertCircle, FileEdit, FileWarning, GitMerge, GitPullRequest, Upload } from "lucide-react";
 import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
 import type { PrInfo, Workstream } from "../../shared/types";
@@ -38,17 +38,17 @@ const PrSection = ({ prInfo }: { prInfo: PrInfo | null }) => {
     );
   }
   return (
-    <div className="card-pr">
-      <GitPullRequest size={13} />
+    <div className={`card-pr${prInfo.merged ? " card-pr-merged" : ""}`}>
+      {prInfo.merged ? <GitMerge size={13} /> : <GitPullRequest size={13} />}
       <button
         type="button"
         className="pr-link"
         onClick={() => void window.appApi.openExternal(prInfo.url)}
-        title={`Open PR #${prInfo.number}`}
+        title={`Open PR #${prInfo.number}${prInfo.merged ? " (merged)" : ""}`}
       >
         #{prInfo.number}
       </button>
-      <CiBadge ciStatus={prInfo.ciStatus} />
+      {!prInfo.merged && <CiBadge ciStatus={prInfo.ciStatus} />}
     </div>
   );
 };

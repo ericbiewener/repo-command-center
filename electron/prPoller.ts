@@ -71,7 +71,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
         "--repo",
         repoArg,
         "--json",
-        "number,url,statusCheckRollup",
+        "number,url,statusCheckRollup,state",
       ],
       { timeout: 10_000 },
     );
@@ -82,6 +82,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
       number?: number;
       url?: string;
       statusCheckRollup?: Array<{ state: string }>;
+      state?: string;
     };
 
     if (!data.number || !data.url) return null;
@@ -94,6 +95,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
       number: data.number,
       url: data.url,
       ciStatus: mapCiStatus(data.statusCheckRollup ?? []),
+      merged: data.state === "MERGED",
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
