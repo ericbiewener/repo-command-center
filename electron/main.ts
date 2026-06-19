@@ -100,7 +100,9 @@ app.whenReady().then(async () => {
   // Refresh PR/CI when dashboard is brought to foreground (debounced)
   dashboardWindow.on("focus", debouncedPrRefresh);
 
-  tray = createTray(toggleDashboard, refreshWorkstreams);
+  if (!isDock) {
+    tray = createTray(toggleDashboard, refreshWorkstreams);
+  }
   shortcutRegistered = globalShortcut.register("CommandOrControl+Alt+Space", showDashboard);
 
   if (!shortcutRegistered) {
