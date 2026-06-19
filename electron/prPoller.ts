@@ -4,13 +4,17 @@ import type { PrInfo, Workstream } from "../src/shared/types.js";
 
 const execFileAsync = promisify(execFile);
 
-const GITHUB_URL_PREFIX = "https://github.com/";
+type GitHubRemote = { host: string; slug: string };
 
-const parseGitHubSlug = (remote: string): string | null => {
-  const httpsMatch = remote.match(/github\.com\/([^/]+\/[^/\s]+?)(?:\.git)?\s*$/);
-  if (httpsMatch) return httpsMatch[1];
-  const sshMatch = remote.match(/github\.com:([^/\s]+\/[^/\s]+?)(?:\.git)?\s*$/);
-  if (sshMatch) return sshMatch[1];
+// Parses HTTPS or SSH remote URLs from any GitHub host (github.com or GHE).
+// Returns the hostname and owner/repo slug, or null if the URL is unrecognised.
+const parseGitHubRemote = (remote: string): GitHubRemote | null => {
+  // HTTPS: https://github.com/owner/repo[.git] or https://ghe.company.com/owner/repo[.git]
+  const httpsMatch = remote.match(/^https?:\/\/([^/]+)\/([^/\s]+\/[^/\s]+?)(?:\.git)?\s*$/);
+  if (httpsMatch) return { host: httpsMatch[1], slug: httpsMatch[2] };
+  // SSH: git@github.com:owner/repo[.git] or git@ghe.company.com:owner/repo[.git]
+  const sshMatch = remote.match(/@([^:]+):([^/\s]+\/[^/\s]+?)(?:\.git)?\s*$/);
+  if (sshMatch) return { host: sshMatch[1], slug: sshMatch[2] };
   return null;
 };
 
@@ -26,8 +30,13 @@ const mapCiStatus = (rollup: Array<{ state: string }>): CiStatus =>
         : "error";
 
 const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
-  const slug = parseGitHubSlug(workstream.repoRemote);
-  if (!slug) return null;
+  const ghRemote = parseGitHubRemote(workstream.repoRemote);
+  if (!ghRemote) return null;
+
+  // gh accepts "OWNER/REPO" for github.com and "HOST/OWNER/REPO" for GHE.
+  const repoArg =
+    ghRemote.host === "github.com" ? ghRemote.slug : `${ghRemote.host}/${ghRemote.slug}`;
+  const expectedUrlPrefix = `https://${ghRemote.host}/`;
 
   try {
     const { stdout } = await execFileAsync(
@@ -38,7 +47,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
         "--head",
         workstream.branch,
         "--repo",
-        slug,
+        repoArg,
         "--json",
         "number,url,statusCheckRollup",
       ],
@@ -55,7 +64,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
 
     if (!data.number || !data.url) return null;
 
-    if (!data.url.startsWith(GITHUB_URL_PREFIX)) {
+    if (!data.url.startsWith(expectedUrlPrefix)) {
       return { fetchError: "invalid PR URL scheme" };
     }
 

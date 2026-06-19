@@ -12,7 +12,6 @@ import type { PrPoller } from "./prPoller";
 const execFileAsync = promisify(execFile);
 
 const BRANCH_RE = /^[a-zA-Z0-9._-]+$/;
-const GITHUB_URL_PREFIX = "https://github.com/";
 
 type AgentHandle = { process: ReturnType<typeof spawn>; branch: string };
 
@@ -67,7 +66,7 @@ export const registerIpc = (options: IpcOptions) => {
   });
 
   ipcMain.handle("shell:openExternal", async (_event, url: unknown) => {
-    if (typeof url !== "string" || !url.startsWith(GITHUB_URL_PREFIX)) return;
+    if (typeof url !== "string" || !url.startsWith("https://")) return;
     await shell.openExternal(url);
   });
 
