@@ -80,7 +80,7 @@ const debouncedPrRefresh = () => {
 
 app.whenReady().then(async () => {
   const settings = await readSettings();
-  const isDock = settings.windowMode === "dock";
+  const isDock = settings.windowMode !== "menubar";
 
   if (!isDock) {
     app.dock?.hide();
