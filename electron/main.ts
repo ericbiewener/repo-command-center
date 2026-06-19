@@ -76,10 +76,6 @@ const debouncedPrRefresh = () => {
 };
 
 app.whenReady().then(async () => {
-  if (!isDevelopment) {
-    app.dock?.hide();
-  }
-
   dashboardWindow = createDashboardWindow({
     onBlurHide: () => {
       lastBlurHideAt = Date.now();
