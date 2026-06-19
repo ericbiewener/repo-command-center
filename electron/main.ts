@@ -29,6 +29,7 @@ const refreshWorkstreams = () => {
 };
 
 const showDashboard = () => {
+  app.focus({ steal: true });
   dashboardWindow?.show();
   dashboardWindow?.focus();
 };
