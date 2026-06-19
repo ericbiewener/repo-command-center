@@ -5,6 +5,7 @@ import { app, BrowserWindow, type Rectangle, screen } from "electron";
 type DashboardWindowOptions = {
   onBlurHide?: () => void;
   showOnReady?: boolean;
+  shouldHideOnBlur?: () => boolean;
 };
 
 type DashboardWindowState = Rectangle & {
@@ -113,6 +114,7 @@ export const createDashboardWindow = (options: DashboardWindowOptions = {}) => {
   });
 
   window.on("blur", () => {
+    if (options.shouldHideOnBlur && !options.shouldHideOnBlur()) return;
     saveWindowState();
     window.hide();
     options.onBlurHide?.();

@@ -15,6 +15,7 @@ let shortcutRegistered = false;
 let localApiInfo: ServerInfo | null = null;
 let closeLocalApi: (() => Promise<void>) | null = null;
 let lastBlurHideAt = 0;
+let lastShowAt = 0;
 
 const isDevelopment = Boolean(process.env.ELECTRON_RENDERER_URL);
 
@@ -29,6 +30,7 @@ const refreshWorkstreams = () => {
 };
 
 const showDashboard = () => {
+  lastShowAt = Date.now();
   app.focus({ steal: true });
   dashboardWindow?.show();
   dashboardWindow?.focus();
@@ -81,6 +83,9 @@ app.whenReady().then(async () => {
     onBlurHide: () => {
       lastBlurHideAt = Date.now();
     },
+    // Don't hide on blur within 500ms of showDashboard — prevents Cmd+Tab
+    // activation from being immediately cancelled by the transition blur event.
+    shouldHideOnBlur: () => Date.now() - lastShowAt > 500,
     showOnReady: isDevelopment,
   });
 
