@@ -35,17 +35,15 @@ const WorkstreamCard = ({ workstream, onOpenRepo, customActions }: WorkstreamCar
   return (
     <tr className={`workstream-row status-row-${workstream.status}`}>
       <td className="col-branch">
-        <div className="branch-cell">
-          <span className="branch-name">{workstream.branch}</span>
-          {workstream.title ? <span className="row-title">{workstream.title}</span> : null}
-          {workstream.summary ? <span className="row-summary">{workstream.summary}</span> : null}
-          {!workstream.isValid ? (
-            <span className="row-invalid" title={workstream.validationErrors.join("; ")}>
-              <FileWarning size={12} />
-            </span>
-          ) : null}
-        </div>
+        <span className="branch-name">{workstream.branch}</span>
+        {!workstream.isValid ? (
+          <span className="row-invalid" title={workstream.validationErrors.join("; ")}>
+            <FileWarning size={12} />
+          </span>
+        ) : null}
       </td>
+
+      <td className="col-title">{workstream.title ?? null}</td>
 
       <td className="col-status">
         <span className={`status-pill status-pill-${workstream.status}`}>
@@ -130,6 +128,13 @@ const WorkstreamCard = ({ workstream, onOpenRepo, customActions }: WorkstreamCar
             <img src={vscodeLogo} alt="VS Code" className="vscode-icon" />
           </button>
         </div>
+      </td>
+      <td className="col-description">
+        {workstream.summary ? (
+          <span className="description-text" title={workstream.summary}>
+            {workstream.summary}
+          </span>
+        ) : null}
       </td>
     </tr>
   );

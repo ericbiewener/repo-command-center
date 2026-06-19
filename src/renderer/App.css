@@ -262,33 +262,33 @@ code {
   vertical-align: middle;
 }
 
-/* Branch column */
+/* Branch / title / description columns */
 
-.branch-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+.col-branch {
+  white-space: nowrap;
 }
 
 .branch-name {
   font-weight: 600;
   color: #2b2c28;
-  overflow-wrap: anywhere;
-}
-
-.row-title {
-  color: #5f5b51;
-  font-size: 12px;
-}
-
-.row-summary {
-  color: #7a7668;
-  font-size: 11px;
 }
 
 .row-invalid {
   color: #bf3d28;
+  margin-left: 4px;
+}
+
+.col-description {
+  max-width: 280px;
+}
+
+.description-text {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #7a7668;
+  font-size: 12px;
 }
 
 /* Status pill */
