@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ResolvedCustomAction } from "../shared/settings";
 import type { AppInfo, Workstream } from "../shared/types";
 import EmptyState from "./components/EmptyState";
 import ErrorPanel from "./components/ErrorPanel";
@@ -21,6 +22,7 @@ const DashboardApp = () => {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -35,6 +37,15 @@ const DashboardApp = () => {
         setError(refreshError instanceof Error ? refreshError.message : String(refreshError));
       })
       .finally(() => setIsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    window.appApi
+      .getCustomActions()
+      .then(setCustomActions)
+      .catch(() => {
+        // non-fatal
+      });
   }, []);
 
   useEffect(() => {
@@ -84,7 +95,12 @@ const DashboardApp = () => {
           <Sidebar groups={groups} />
           <div className="groups">
             {groups.map((group) => (
-              <StatusGroup key={group.repoKey} group={group} onOpenRepo={openRepo} />
+              <StatusGroup
+                key={group.repoKey}
+                group={group}
+                onOpenRepo={openRepo}
+                customActions={customActions}
+              />
             ))}
           </div>
         </div>

@@ -1,13 +1,15 @@
 import { GitBranch } from "lucide-react";
+import type { ResolvedCustomAction } from "../../shared/settings";
 import type { WorkstreamRepoGroup } from "../utils/groupWorkstreams";
 import WorkstreamCard from "./WorkstreamCard";
 
 type StatusGroupProps = {
   group: WorkstreamRepoGroup;
   onOpenRepo: (repoPath: string) => void;
+  customActions: ResolvedCustomAction[];
 };
 
-const StatusGroup = ({ group, onOpenRepo }: StatusGroupProps) => (
+const StatusGroup = ({ group, onOpenRepo, customActions }: StatusGroupProps) => (
   <section className="repo-section" id={`repo-section-${group.repoKey}`}>
     <div className="repo-heading">
       <h2>{group.repoName}</h2>
@@ -31,6 +33,7 @@ const StatusGroup = ({ group, onOpenRepo }: StatusGroupProps) => (
                 key={workstream.statusFilePath}
                 workstream={workstream}
                 onOpenRepo={onOpenRepo}
+                customActions={customActions}
               />
             ))}
           </div>

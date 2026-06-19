@@ -98,3 +98,5 @@ export const createPrPoller = (onUpdate: () => void) => {
 
   return { fetchAll, getCached, startPolling };
 };
+
+export type PrPoller = ReturnType<typeof createPrPoller>;
