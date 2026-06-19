@@ -3,6 +3,7 @@ import { getSettingsPath } from "../shared/paths.js";
 
 export type Settings = {
   action?: string;
+  deleteAction?: string;
   multiline?: boolean;
 };
 

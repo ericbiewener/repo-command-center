@@ -4,7 +4,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { isCancel, select } from "@clack/prompts";
-import { execa } from "execa";
 import pc from "picocolors";
 import type {
   WorkstreamBranchGroup,
@@ -383,6 +382,12 @@ const run = async () => {
     process.stderr.write(CLEAR);
 
     if (result.type === "delete") {
+      if (settings.deleteAction) {
+        const workstream = branch.items[0];
+        assert(workstream, "Workstream not found");
+        process.stdout.write(settings.deleteAction.replaceAll("$1", workstream.repoPath) + "\n");
+        return;
+      }
       await deleteWorkstreamFiles(branch.items);
       const updated = await listWorkstreams();
       groups = groupWorkstreams(updated);
@@ -419,11 +424,7 @@ const run = async () => {
       return;
     }
 
-    await execa(settings.action, {
-      env: { ...process.env, ...buildEnvVars(workstream) },
-      shell: true,
-      stdio: "inherit",
-    });
+    process.stdout.write(settings.action.replaceAll("$1", workstream.repoPath) + "\n");
     return;
   }
 };

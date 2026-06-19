@@ -7,7 +7,6 @@
 
 _dashboard_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 _selected="$(FORCE_COLOR=1 node "$_dashboard_dir/../../dist/cli/view.js")"
-
 [[ -n "$_selected" ]] && eval "$_selected"
 
 unset _dashboard_dir _selected
