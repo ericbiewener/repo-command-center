@@ -50,6 +50,8 @@ const invalidWorkstream = (statusFilePath: string, validationErrors: string[]): 
   statusFilePath,
   isValid: false,
   validationErrors,
+  gitStatus: null,
+  prInfo: null,
 });
 
 const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
@@ -102,6 +104,8 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
           statusFilePath,
           isValid: true,
           validationErrors: [],
+          gitStatus: null,
+          prInfo: null,
         };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

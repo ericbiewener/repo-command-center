@@ -1,17 +1,2 @@
-import fs from "node:fs/promises";
-import { getSettingsPath } from "../shared/paths.js";
-
-export type Settings = {
-  action?: string;
-  deleteAction?: string;
-  multiline?: boolean;
-};
-
-export const readSettings = async (): Promise<Settings> => {
-  try {
-    const raw = await fs.readFile(getSettingsPath(), "utf8");
-    return JSON.parse(raw) as Settings;
-  } catch {
-    return {};
-  }
-};
+export type { ResolvedCustomAction, Settings } from "../shared/settings.js";
+export { readSettings } from "../shared/settings.js";

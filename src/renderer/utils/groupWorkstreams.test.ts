@@ -18,6 +18,8 @@ const makeWorkstream = (overrides: Partial<Workstream> = {}) =>
       "/Users/eric/.ai-work-status/repos/command-center--aaaaaaaaaa/branches/main.json",
     isValid: true,
     validationErrors: [],
+    gitStatus: null,
+    prInfo: null,
     ...overrides,
   }) satisfies Workstream;
 
