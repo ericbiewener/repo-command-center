@@ -79,14 +79,22 @@ const debouncedPrRefresh = () => {
 };
 
 app.whenReady().then(async () => {
+  const settings = await readSettings();
+  const isDock = settings.windowMode === "dock";
+
+  if (!isDock) {
+    app.dock?.hide();
+  }
+
   dashboardWindow = createDashboardWindow({
-    onBlurHide: () => {
-      lastBlurHideAt = Date.now();
-    },
-    // Don't hide on blur within 500ms of showDashboard — prevents Cmd+Tab
-    // activation from being immediately cancelled by the transition blur event.
-    shouldHideOnBlur: () => Date.now() - lastShowAt > 500,
-    showOnReady: isDevelopment,
+    alwaysOnTop: !isDock,
+    onBlurHide: isDock
+      ? undefined
+      : () => {
+          lastBlurHideAt = Date.now();
+        },
+    shouldHideOnBlur: isDock ? () => false : () => Date.now() - lastShowAt > 500,
+    showOnReady: isDevelopment || isDock,
   });
 
   // Refresh PR/CI when dashboard is brought to foreground (debounced)
@@ -98,8 +106,6 @@ app.whenReady().then(async () => {
   if (!shortcutRegistered) {
     console.warn("Could not register global shortcut CommandOrControl+Alt+Space.");
   }
-
-  const settings = await readSettings();
 
   registerIpc({
     getAppInfo,

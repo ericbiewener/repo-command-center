@@ -11,6 +11,7 @@ export type Settings = {
   notificationClickCommand?: string;
   prPollIntervalSeconds?: number;
   customActions?: ReadonlyArray<{ title: string; icon?: string; command: string }>;
+  windowMode?: "menubar" | "dock";
 };
 
 export type ResolvedCustomAction = { title: string; iconDataUri?: string; command: string };
