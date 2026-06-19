@@ -234,32 +234,32 @@ code {
   font-size: 13px;
 }
 
-/* Fixed column widths — same across all per-repo tables */
+/* Fixed column widths — description gets all remaining space */
 .col-branch {
-  width: 130px;
+  width: 120px;
 }
 .col-title {
-  width: 150px;
+  width: 130px;
 }
 .col-status {
-  width: 110px;
+  width: 90px;
 }
 .col-local-changes {
-  width: 48px;
+  width: 32px;
 }
 .col-pr {
-  width: 76px;
+  width: 66px;
 }
 .col-ci {
-  width: 36px;
+  width: 26px;
 }
 .col-actions {
-  width: 84px;
+  width: 68px;
 }
-/* .col-description takes the remaining space */
+/* .col-description is unconstrained — takes whatever is left */
 
 .workstream-table thead th {
-  padding: 5px 10px;
+  padding: 4px 6px;
   text-align: left;
   color: #8a8478;
   font-size: 11px;
@@ -283,18 +283,15 @@ code {
 }
 
 .workstream-table td {
-  padding: 8px 10px;
+  padding: 6px 6px;
   vertical-align: middle;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 /* Branch / title / description columns */
 
-.col-branch,
-.col-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* Branch and title use the fixed col width; content wraps if needed */
 
 .branch-name {
   font-weight: 600;
@@ -304,10 +301,6 @@ code {
 .row-invalid {
   color: #bf3d28;
   margin-left: 4px;
-}
-
-.col-description {
-  max-width: 280px;
 }
 
 .description-text {
