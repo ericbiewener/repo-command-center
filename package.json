@@ -21,7 +21,8 @@
     "format": "biome format --write .",
     "check": "biome check --write .",
     "prepare": "husky",
-    "sessions": "pgrep -fl claude"
+    "sessions": "pgrep -fl claude",
+    "postinstall": "pnpm build:cli"
   },
   "lint-staged": {
     "*.{css,json,md,ts,tsx}": "biome check --write --no-errors-on-unmatched"
