@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { RepoInfo } from "./types";
+import type { RepoInfo, Workstream } from "./types";
 
 const execFileAsync = promisify(execFile);
 
@@ -12,6 +12,30 @@ const git = async (args: string[], cwd: string) => {
 };
 
 const tryGit = async (args: string[], cwd: string) => git(args, cwd).catch(() => "");
+
+export const getWorkstreamGitStatus = async (
+  repoPath: string,
+): Promise<Workstream["gitStatus"]> => {
+  if (!repoPath) return null;
+
+  try {
+    const porcelain = await git(["status", "--porcelain"], repoPath);
+    const uncommittedCount = porcelain ? porcelain.split("\n").filter(Boolean).length : 0;
+
+    let unpushedCount: number | null = null;
+    try {
+      const revListOut = await git(["rev-list", "@{u}..HEAD", "--count"], repoPath);
+      const parsed = Number.parseInt(revListOut, 10);
+      unpushedCount = Number.isNaN(parsed) ? null : parsed;
+    } catch {
+      // No upstream configured — expected for new worktree branches
+    }
+
+    return { uncommittedCount, unpushedCount };
+  } catch {
+    return null;
+  }
+};
 
 export const getRepoNameFromRemote = (remote: string) => {
   const withoutGitSuffix = remote

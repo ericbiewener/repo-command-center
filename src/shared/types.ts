@@ -48,6 +48,15 @@ export type WorkstreamStatus =
 
 export type AgentKind = "claude" | "codex" | "other" | "unknown";
 
+export type PrInfo =
+  | {
+      number: number;
+      url: string;
+      ciStatus: "passing" | "failing" | "pending" | "error";
+      merged: boolean;
+    }
+  | { fetchError: string };
+
 export type Workstream = {
   id: string;
   title?: string;
@@ -64,6 +73,8 @@ export type Workstream = {
   statusFilePath: string;
   isValid: boolean;
   validationErrors: string[];
+  gitStatus: { uncommittedCount: number; unpushedCount: number | null } | null;
+  prInfo: PrInfo | null;
 };
 
 export type ServerInfo = {

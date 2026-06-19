@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { getWorkstreamGitStatus } from "./gitInfo";
 import { getStatusReposDir } from "./paths";
 import { normalizeAgent, normalizeStatus } from "./statusNormalization";
 import { generatedStatus, type PersistedStatusRecord, type Workstream } from "./types";
@@ -50,6 +51,8 @@ const invalidWorkstream = (statusFilePath: string, validationErrors: string[]): 
   statusFilePath,
   isValid: false,
   validationErrors,
+  gitStatus: null,
+  prInfo: null,
 });
 
 const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
@@ -102,6 +105,8 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
           statusFilePath,
           isValid: true,
           validationErrors: [],
+          gitStatus: null,
+          prInfo: null,
         };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -112,7 +117,13 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
 
 export const listWorkstreams = async (statusRoot = getStatusReposDir()) => {
   const files = await listStatusFiles(statusRoot);
-  const workstreams = await Promise.all(files.map((file) => parseStatusFile(file)));
+  const parsed = await Promise.all(files.map((file) => parseStatusFile(file)));
+  const withGitStatus = await Promise.all(
+    parsed.map(async (ws) => ({
+      ...ws,
+      gitStatus: ws.isValid ? await getWorkstreamGitStatus(ws.repoPath) : null,
+    })),
+  );
 
-  return workstreams.sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0));
+  return withGitStatus.sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0));
 };

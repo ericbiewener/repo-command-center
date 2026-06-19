@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ResolvedCustomAction } from "../shared/settings";
 import type { AppInfo, Workstream } from "../shared/types";
 import EmptyState from "./components/EmptyState";
 import ErrorPanel from "./components/ErrorPanel";
-import Sidebar from "./components/Sidebar";
-import StatusGroup from "./components/StatusGroup";
+import WorkstreamTable from "./components/WorkstreamTable";
 import { groupWorkstreams } from "./utils/groupWorkstreams";
 
 const BridgeUnavailable = () => (
@@ -21,6 +21,7 @@ const DashboardApp = () => {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -35,6 +36,15 @@ const DashboardApp = () => {
         setError(refreshError instanceof Error ? refreshError.message : String(refreshError));
       })
       .finally(() => setIsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    window.appApi
+      .getCustomActions()
+      .then(setCustomActions)
+      .catch(() => {
+        // non-fatal
+      });
   }, []);
 
   useEffect(() => {
@@ -80,13 +90,8 @@ const DashboardApp = () => {
       {!isLoading && groups.length === 0 ? (
         <EmptyState statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"} />
       ) : (
-        <div className="content-area">
-          <Sidebar groups={groups} />
-          <div className="groups">
-            {groups.map((group) => (
-              <StatusGroup key={group.repoKey} group={group} onOpenRepo={openRepo} />
-            ))}
-          </div>
+        <div className="groups">
+          <WorkstreamTable groups={groups} onOpenRepo={openRepo} customActions={customActions} />
         </div>
       )}
     </main>

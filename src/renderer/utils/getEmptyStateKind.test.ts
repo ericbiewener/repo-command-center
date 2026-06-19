@@ -17,6 +17,8 @@ const makeWorkstream = (status: Workstream["status"], id = status) =>
     statusFilePath: `/status/${id}.json`,
     isValid: true,
     validationErrors: [],
+    gitStatus: null,
+    prInfo: null,
   }) satisfies Workstream;
 
 describe("getEmptyStateKind", () => {

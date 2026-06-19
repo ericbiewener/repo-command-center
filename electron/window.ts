@@ -5,6 +5,8 @@ import { app, BrowserWindow, type Rectangle, screen } from "electron";
 type DashboardWindowOptions = {
   onBlurHide?: () => void;
   showOnReady?: boolean;
+  shouldHideOnBlur?: () => boolean;
+  alwaysOnTop?: boolean;
 };
 
 type DashboardWindowState = Rectangle & {
@@ -85,7 +87,7 @@ export const createDashboardWindow = (options: DashboardWindowOptions = {}) => {
     frame: false,
     autoHideMenuBar: true,
     resizable: true,
-    alwaysOnTop: true,
+    alwaysOnTop: options.alwaysOnTop ?? true,
     title: "AI Workstreams",
     webPreferences: {
       preload: path.join(__dirname, "../preload/preload.mjs"),
@@ -113,6 +115,7 @@ export const createDashboardWindow = (options: DashboardWindowOptions = {}) => {
   });
 
   window.on("blur", () => {
+    if (options.shouldHideOnBlur && !options.shouldHideOnBlur()) return;
     saveWindowState();
     window.hide();
     options.onBlurHide?.();
