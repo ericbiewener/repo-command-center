@@ -122,6 +122,8 @@ code {
   overflow: hidden;
 }
 
+/* groups is now the direct scroll container (no sidebar) */
+
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -229,36 +231,16 @@ code {
 
 .workstream-table {
   width: 100%;
-  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13px;
 }
 
-/* Fixed column widths — description gets all remaining space.
-   All widths are sized to their content; the dot columns are
-   just wide enough for their header text. */
-.col-branch {
-  width: 150px;
+/* Description is the only column with a width hint — it's greedy and
+   takes all space left after the other columns size to their content. */
+.col-description {
+  width: 9999px;
+  white-space: normal; /* don't force nowrap so browser doesn't size to full text */
 }
-.col-title {
-  width: 140px;
-}
-.col-status {
-  width: 60px;
-}
-.col-local-changes {
-  width: 28px;
-} /* dot only, header is "·" */
-.col-pr {
-  width: 66px;
-}
-.col-ci {
-  width: 26px;
-} /* dot only, header is "CI" */
-.col-actions {
-  width: 52px;
-}
-/* .col-description is unconstrained — takes whatever is left */
 
 .workstream-table thead th {
   padding: 4px 6px;
@@ -270,7 +252,6 @@ code {
   text-transform: uppercase;
   border-bottom: 1px solid #d6d0c3;
   white-space: nowrap;
-  overflow: hidden;
 }
 
 .workstream-table tbody tr {
@@ -281,21 +262,23 @@ code {
   border-bottom: none;
 }
 
-.workstream-table tbody tr:hover {
+.workstream-table tbody tr:hover:not(.repo-header-row) {
   background: rgba(255, 255, 255, 0.65);
 }
 
 .workstream-table td {
   padding: 6px 6px;
   vertical-align: middle;
-  overflow: hidden;
   white-space: nowrap;
 }
 
-/* Branch and title clip with ellipsis inside their fixed width */
-.col-branch,
-.col-title {
-  text-overflow: ellipsis;
+/* Repo header rows */
+.repo-header-row {
+  border-bottom: none;
+}
+
+.repo-header-cell {
+  padding: 20px 6px 4px;
 }
 
 .branch-name {

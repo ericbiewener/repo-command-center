@@ -3,8 +3,7 @@ import type { ResolvedCustomAction } from "../shared/settings";
 import type { AppInfo, Workstream } from "../shared/types";
 import EmptyState from "./components/EmptyState";
 import ErrorPanel from "./components/ErrorPanel";
-import Sidebar from "./components/Sidebar";
-import StatusGroup from "./components/StatusGroup";
+import WorkstreamTable from "./components/WorkstreamTable";
 import { groupWorkstreams } from "./utils/groupWorkstreams";
 
 const BridgeUnavailable = () => (
@@ -91,18 +90,8 @@ const DashboardApp = () => {
       {!isLoading && groups.length === 0 ? (
         <EmptyState statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"} />
       ) : (
-        <div className="content-area">
-          <Sidebar groups={groups} />
-          <div className="groups">
-            {groups.map((group) => (
-              <StatusGroup
-                key={group.repoKey}
-                group={group}
-                onOpenRepo={openRepo}
-                customActions={customActions}
-              />
-            ))}
-          </div>
+        <div className="groups">
+          <WorkstreamTable groups={groups} onOpenRepo={openRepo} customActions={customActions} />
         </div>
       )}
     </main>
