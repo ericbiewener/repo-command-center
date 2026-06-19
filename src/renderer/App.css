@@ -234,27 +234,29 @@ code {
   font-size: 13px;
 }
 
-/* Fixed column widths — description gets all remaining space */
+/* Fixed column widths — description gets all remaining space.
+   All widths are sized to their content; the dot columns are
+   just wide enough for their header text. */
 .col-branch {
-  width: 120px;
+  width: 150px;
 }
 .col-title {
-  width: 130px;
+  width: 140px;
 }
 .col-status {
-  width: 90px;
+  width: 60px;
 }
 .col-local-changes {
-  width: 32px;
-}
+  width: 28px;
+} /* dot only, header is "·" */
 .col-pr {
   width: 66px;
 }
 .col-ci {
   width: 26px;
-}
+} /* dot only, header is "CI" */
 .col-actions {
-  width: 68px;
+  width: 52px;
 }
 /* .col-description is unconstrained — takes whatever is left */
 
@@ -268,6 +270,7 @@ code {
   text-transform: uppercase;
   border-bottom: 1px solid #d6d0c3;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .workstream-table tbody tr {
@@ -285,13 +288,15 @@ code {
 .workstream-table td {
   padding: 6px 6px;
   vertical-align: middle;
-  overflow: visible;
+  overflow: hidden;
   white-space: nowrap;
 }
 
-/* Branch / title / description columns */
-
-/* Branch and title use the fixed col width; content wraps if needed */
+/* Branch and title clip with ellipsis inside their fixed width */
+.col-branch,
+.col-title {
+  text-overflow: ellipsis;
+}
 
 .branch-name {
   font-weight: 600;
@@ -317,7 +322,7 @@ code {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
+  padding: 2px 5px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
