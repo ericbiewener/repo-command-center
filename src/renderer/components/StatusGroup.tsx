@@ -39,6 +39,16 @@ const StatusGroup = ({ group, onOpenRepo, customActions }: StatusGroupProps) => 
       </div>
 
       <table className="workstream-table">
+        <colgroup>
+          <col className="col-branch" />
+          <col className="col-title" />
+          <col className="col-status" />
+          <col className="col-local-changes" />
+          <col className="col-pr" />
+          <col className="col-ci" />
+          <col className="col-actions" />
+          <col className="col-description" />
+        </colgroup>
         <thead>
           <tr>
             <th>Branch</th>

@@ -229,9 +229,34 @@ code {
 
 .workstream-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13px;
 }
+
+/* Fixed column widths — same across all per-repo tables */
+.col-branch {
+  width: 130px;
+}
+.col-title {
+  width: 150px;
+}
+.col-status {
+  width: 110px;
+}
+.col-local-changes {
+  width: 48px;
+}
+.col-pr {
+  width: 76px;
+}
+.col-ci {
+  width: 36px;
+}
+.col-actions {
+  width: 84px;
+}
+/* .col-description takes the remaining space */
 
 .workstream-table thead th {
   padding: 5px 10px;
@@ -264,7 +289,10 @@ code {
 
 /* Branch / title / description columns */
 
-.col-branch {
+.col-branch,
+.col-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
