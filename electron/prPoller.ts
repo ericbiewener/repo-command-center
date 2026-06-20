@@ -52,6 +52,14 @@ const mapCiStatus = (rollup: Array<{ state: string }>): CiStatus => {
   return "error";
 };
 
+// macOS .app bundles don't inherit the user's shell PATH, so tools installed
+// via Homebrew (e.g. gh) are invisible unless we extend the PATH explicitly.
+const MAC_EXTRA_PATHS = "/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin";
+const extendedEnv = {
+  ...process.env,
+  PATH: `${MAC_EXTRA_PATHS}:${process.env.PATH ?? ""}`,
+};
+
 const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
   const ghRemote = parseGitHubRemote(workstream.repoRemote);
   if (!ghRemote) return null;
@@ -73,7 +81,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
         "--json",
         "number,url,statusCheckRollup,state",
       ],
-      { timeout: 10_000 },
+      { timeout: 10_000, env: extendedEnv },
     );
 
     if (!stdout.trim()) return null;
