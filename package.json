@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "pnpm build:cli && electron-vite build",
-    "bundle": "pnpm build && electron-builder --mac",
+    "bundle": "pnpm build && electron-builder --mac && ditto \"$(find release -maxdepth 2 -name '*.app' | head -1)\" \"/Applications/AI Work Command Center.app\" && open -a 'AI Work Command Center'",
     "build:cli": "scripts/build-cli.sh",
     "build:cli:watch": "scripts/build-cli.sh --watch",
     "dev:cli": "npx tsx --watch src/cli/view.ts",

@@ -344,7 +344,7 @@ code {
 }
 
 /* Repo title: bold sans-serif, cyan accent */
-.repo-heading h2 {
+.repo-heading > h2 {
   margin: 0;
   font-family: var(--font);
   font-size: 16px;
@@ -354,7 +354,7 @@ code {
   line-height: 1;
 }
 
-.repo-heading button {
+.repo-heading > button:not(.modal-backdrop) {
   min-height: 30px;
   height: 30px;
   width: 30px;
@@ -655,9 +655,16 @@ button:hover:not(:disabled) .vscode-icon {
   -webkit-backdrop-filter: blur(3px);
 }
 
+button.modal-backdrop:hover {
+  background: rgba(0, 0, 0, 0.72);
+}
+
 /* ─── Modal box ──────────────────────────────────────────── */
 .modal-box {
-  position: relative;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 101;
   width: 480px;
   max-width: calc(100vw - 48px);
