@@ -13,3 +13,8 @@
   - Do NOT add backwards compatible code to handle the previous schema shape
   - Do NOT add schema versioning.
   - REWRITE the `status.json` files to comply with the new schema.
+
+# Validation
+
+- Test all your work. Use the chrome devtools mcp server & playwright when necessary.
+- Put temporary files you create for validation in `/tmp` so that they don't accidentally get committed.

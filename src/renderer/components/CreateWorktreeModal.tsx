@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -59,13 +60,25 @@ const CreateWorktreeModal = ({ repoPath, repoName, onClose }: CreateWorktreeModa
 
   return createPortal(
     <>
-      {/* Backdrop button — closes on click, sits behind the modal box */}
-      <button type="button" className="modal-backdrop" aria-label="Close modal" onClick={onClose} />
-      <div
+      <motion.button
+        type="button"
+        className="modal-backdrop"
+        aria-label="Close modal"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+      />
+      <motion.div
         className="modal-box"
         role="dialog"
         aria-modal="true"
         aria-label={`Create worktree for ${repoName}`}
+        initial={{ opacity: 0, scale: 0.94, x: "-50%", y: "calc(-50% - 16px)" }}
+        animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
+        exit={{ opacity: 0, scale: 0.94, x: "-50%", y: "calc(-50% - 16px)" }}
+        transition={{ type: "spring", damping: 28, stiffness: 380, mass: 0.8 }}
       >
         <h2 className="modal-heading">New worktree — {repoName}</h2>
 
@@ -134,7 +147,7 @@ const CreateWorktreeModal = ({ repoPath, repoName, onClose }: CreateWorktreeModa
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </>,
     document.body,
   );

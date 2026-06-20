@@ -1,4 +1,5 @@
 import { AlertCircle, FileWarning, GitMerge, GitPullRequest } from "lucide-react";
+import { motion } from "motion/react";
 import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
 import type { Workstream } from "../../shared/types";
@@ -39,9 +40,12 @@ const WorkstreamCard = ({
   };
 
   return (
-    <tr
+    <motion.tr
       className={`workstream-row status-row-${workstream.status}${isSelected ? " selected" : ""}`}
       data-selected={isSelected ? "true" : undefined}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
     >
       <td className="col-branch">
         <span className="branch-name">{workstream.branch}</span>
@@ -145,7 +149,7 @@ const WorkstreamCard = ({
           </span>
         ) : null}
       </td>
-    </tr>
+    </motion.tr>
   );
 };
 

@@ -199,7 +199,6 @@ code {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  border-top: 2px solid var(--accent);
 }
 
 /* ─── Search bar ─────────────────────────────────────────── */
@@ -385,25 +384,25 @@ code {
 
 /* ─── Status left-border on workstream rows ──────────────── */
 .workstream-row td:first-child {
-  border-left: 3px solid var(--b);
+  border-left: 3px solid transparent;
   padding-left: 18px;
 }
 
 .workstream-row.status-row-running td:first-child {
-  border-left-color: var(--s-run);
+  border-left: 3px solid var(--s-run);
   animation: run-border 2s ease-in-out infinite;
 }
 
 .workstream-row.status-row-blocked td:first-child {
-  border-left-color: var(--s-blk);
+  border-left: 3px solid var(--s-blk);
 }
 
 .workstream-row.status-row-ready_for_review td:first-child {
-  border-left-color: var(--s-rev);
+  border-left: 3px solid var(--s-rev);
 }
 
 .workstream-row.status-row-paused td:first-child {
-  border-left-color: var(--s-pau);
+  border-left: 3px solid var(--s-pau);
 }
 
 /* ─── Selected row ───────────────────────────────────────── */
@@ -412,7 +411,7 @@ code {
 }
 
 .workstream-row.selected td:first-child {
-  border-left-color: var(--accent);
+  border-left: 3px solid var(--accent);
 }
 
 /* ─── Branch name ────────────────────────────────────────── */
@@ -664,7 +663,6 @@ button.modal-backdrop:hover {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 101;
   width: 480px;
   max-width: calc(100vw - 48px);

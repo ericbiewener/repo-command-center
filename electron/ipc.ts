@@ -90,6 +90,11 @@ export const registerIpc = (options: IpcOptions) => {
     },
   );
 
+  ipcMain.handle("pr:forceRefresh", async () => {
+    await options.prPoller.fetchAll(options.cachedWorkstreams.value);
+    return { ok: true as const };
+  });
+
   ipcMain.handle(
     "worktree:create",
     async (_event, params: unknown): Promise<{ ok: true } | { ok: false; error: string }> => {

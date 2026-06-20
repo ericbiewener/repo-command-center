@@ -1,5 +1,6 @@
 import fuzzysort from "fuzzysort";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedCustomAction } from "../shared/settings";
 import type { AppInfo, Workstream } from "../shared/types";
@@ -22,6 +23,7 @@ const DashboardApp = () => {
   const [workstreams, setWorkstreams] = useState<Workstream[]>([]);
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
   const [query, setQuery] = useState("");
@@ -88,6 +90,15 @@ const DashboardApp = () => {
   const effectiveIndex = anchoredIndex >= 0 ? anchoredIndex : 0;
   const selectedWorkstream = flatWorkstreams[effectiveIndex] ?? null;
 
+  const handleForceRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refresh(), window.appApi.refreshPrStatus()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refresh]);
+
   // Keyboard navigation — arrow keys move selection, Enter triggers first custom action
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -106,6 +117,17 @@ const DashboardApp = () => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [flatWorkstreams, effectiveIndex, selectedWorkstream, customActions]);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.metaKey && event.key === "r") {
+        event.preventDefault();
+        void handleForceRefresh();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleForceRefresh]);
 
   // Scroll selected row into view on navigation
   useEffect(() => {
@@ -139,6 +161,20 @@ const DashboardApp = () => {
           autoFocus
           spellCheck={false}
         />
+        <AnimatePresence>
+          {isRefreshing ? (
+            <motion.span
+              key="refresh-spinner"
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
+              transition={{ duration: 0.15 }}
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <Loader2 size={14} className="search-icon spin" />
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
       </div>
       <ErrorPanel message={error} invalidWorkstreams={invalidWorkstreams} />
 
