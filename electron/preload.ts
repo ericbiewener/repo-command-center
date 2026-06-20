@@ -27,4 +27,5 @@ contextBridge.exposeInMainWorld("appApi", {
     ipcRenderer.on("dashboard:shown", listener);
     return () => ipcRenderer.off("dashboard:shown", listener);
   },
+  refreshPrStatus: () => ipcRenderer.invoke("pr:forceRefresh"),
 });

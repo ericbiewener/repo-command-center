@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { AnimatePresence } from "motion/react";
 import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
 import type { WorkstreamRepoGroup } from "../utils/groupWorkstreams";
@@ -39,13 +40,16 @@ const GroupSection = ({
                 <Plus size={14} />
               </button>
             ) : null}
-            {showModal && repoPath ? (
-              <CreateWorktreeModal
-                repoPath={repoPath}
-                repoName={group.repoName}
-                onClose={() => setShowModal(false)}
-              />
-            ) : null}
+            <AnimatePresence>
+              {showModal && repoPath ? (
+                <CreateWorktreeModal
+                  key="modal"
+                  repoPath={repoPath}
+                  repoName={group.repoName}
+                  onClose={() => setShowModal(false)}
+                />
+              ) : null}
+            </AnimatePresence>
           </div>
         </td>
       </tr>

@@ -22,6 +22,7 @@ declare global {
       }) => Promise<{ ok: true } | { ok: false; error: string }>;
       onWorkstreamsUpdated: (callback: () => void) => () => void;
       onDashboardShown: (callback: () => void) => () => void;
+      refreshPrStatus: () => Promise<{ ok: true }>;
     };
   }
 }
