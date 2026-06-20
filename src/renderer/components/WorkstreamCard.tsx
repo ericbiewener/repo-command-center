@@ -8,6 +8,7 @@ type WorkstreamCardProps = {
   workstream: Workstream;
   onOpenRepo: (repoPath: string) => void;
   customActions: ResolvedCustomAction[];
+  isSelected: boolean;
 };
 
 const CI_COLORS: Record<string, string> = {
@@ -17,7 +18,12 @@ const CI_COLORS: Record<string, string> = {
   error: "#8a8478",
 };
 
-const WorkstreamCard = ({ workstream, onOpenRepo, customActions }: WorkstreamCardProps) => {
+const WorkstreamCard = ({
+  workstream,
+  onOpenRepo,
+  customActions,
+  isSelected,
+}: WorkstreamCardProps) => {
   const [executingActions, setExecutingActions] = useState<Record<number, boolean>>(
     Object.create(null),
   );
@@ -33,7 +39,10 @@ const WorkstreamCard = ({ workstream, onOpenRepo, customActions }: WorkstreamCar
   };
 
   return (
-    <tr className={`workstream-row status-row-${workstream.status}`}>
+    <tr
+      className={`workstream-row status-row-${workstream.status}${isSelected ? " selected" : ""}`}
+      data-selected={isSelected ? "true" : undefined}
+    >
       <td className="col-branch">
         <span className="branch-name">{workstream.branch}</span>
         {!workstream.isValid ? (

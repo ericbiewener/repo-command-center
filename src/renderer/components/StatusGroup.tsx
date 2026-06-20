@@ -68,6 +68,7 @@ const StatusGroup = ({ group, onOpenRepo, customActions }: StatusGroupProps) => 
               workstream={workstream}
               onOpenRepo={onOpenRepo}
               customActions={customActions}
+              isSelected={false}
             />
           ))}
         </tbody>
