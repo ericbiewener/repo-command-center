@@ -75,9 +75,9 @@ const CreateWorktreeModal = ({ repoPath, repoName, onClose }: CreateWorktreeModa
         role="dialog"
         aria-modal="true"
         aria-label={`Create worktree for ${repoName}`}
-        initial={{ opacity: 0, scale: 0.94, y: -16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.94, y: -16 }}
+        initial={{ opacity: 0, scale: 0.94, x: "-50%", y: "calc(-50% - 16px)" }}
+        animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
+        exit={{ opacity: 0, scale: 0.94, x: "-50%", y: "calc(-50% - 16px)" }}
         transition={{ type: "spring", damping: 28, stiffness: 380, mass: 0.8 }}
       >
         <h2 className="modal-heading">New worktree — {repoName}</h2>
