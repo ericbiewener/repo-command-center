@@ -11,9 +11,15 @@ type GroupSectionProps = {
   group: WorkstreamRepoGroup;
   onOpenRepo: (repoPath: string) => void;
   customActions: ResolvedCustomAction[];
+  selectedStatusFilePath: string | null;
 };
 
-const GroupSection = ({ group, onOpenRepo, customActions }: GroupSectionProps) => {
+const GroupSection = ({
+  group,
+  onOpenRepo,
+  customActions,
+  selectedStatusFilePath,
+}: GroupSectionProps) => {
   const [showModal, setShowModal] = useState(false);
   const repoPath = group.items[0]?.repoPath ?? "";
 
@@ -49,6 +55,7 @@ const GroupSection = ({ group, onOpenRepo, customActions }: GroupSectionProps) =
           workstream={workstream}
           onOpenRepo={onOpenRepo}
           customActions={customActions}
+          isSelected={workstream.statusFilePath === selectedStatusFilePath}
         />
       ))}
     </>
@@ -59,9 +66,15 @@ type WorkstreamTableProps = {
   groups: WorkstreamRepoGroup[];
   onOpenRepo: (repoPath: string) => void;
   customActions: ResolvedCustomAction[];
+  selectedStatusFilePath: string | null;
 };
 
-const WorkstreamTable = ({ groups, onOpenRepo, customActions }: WorkstreamTableProps) => (
+const WorkstreamTable = ({
+  groups,
+  onOpenRepo,
+  customActions,
+  selectedStatusFilePath,
+}: WorkstreamTableProps) => (
   <table className="workstream-table">
     <thead>
       <tr>
@@ -82,6 +95,7 @@ const WorkstreamTable = ({ groups, onOpenRepo, customActions }: WorkstreamTableP
           group={group}
           onOpenRepo={onOpenRepo}
           customActions={customActions}
+          selectedStatusFilePath={selectedStatusFilePath}
         />
       ))}
     </tbody>
