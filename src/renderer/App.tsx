@@ -56,18 +56,9 @@ const DashboardApp = () => {
     const removeShownListener = window.appApi.onDashboardShown(() => {
       void refresh();
     });
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        void window.appApi.hideWindow();
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-
     return () => {
       removeUpdatedListener();
       removeShownListener();
-      window.removeEventListener("keydown", onKeyDown);
     };
   }, [refresh]);
 
