@@ -126,13 +126,6 @@ export const createDashboardWindow = (options: DashboardWindowOptions = {}) => {
   window.on("resize", saveWindowState);
   window.on("maximize", saveWindowState);
   window.on("unmaximize", saveWindowState);
-  window.webContents.on("before-input-event", (event, input) => {
-    if (input.type === "keyDown" && input.key === "Escape") {
-      event.preventDefault();
-      window.hide();
-    }
-  });
-
   window.once("ready-to-show", () => {
     if (savedState?.isMaximized ?? true) {
       window.maximize();

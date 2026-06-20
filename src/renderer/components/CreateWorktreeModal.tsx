@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type CreateWorktreeModalProps = {
   repoPath: string;
@@ -56,7 +57,7 @@ const CreateWorktreeModal = ({ repoPath, repoName, onClose }: CreateWorktreeModa
     }
   };
 
-  return (
+  return createPortal(
     <>
       {/* Backdrop button — closes on click, sits behind the modal box */}
       <button type="button" className="modal-backdrop" aria-label="Close modal" onClick={onClose} />
@@ -134,7 +135,8 @@ const CreateWorktreeModal = ({ repoPath, repoName, onClose }: CreateWorktreeModa
           </div>
         </form>
       </div>
-    </>
+    </>,
+    document.body,
   );
 };
 
