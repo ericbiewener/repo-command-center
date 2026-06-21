@@ -590,16 +590,6 @@ code {
   opacity: 1;
 }
 
-.vscode-icon {
-  width: 21px;
-  height: 21px;
-  opacity: 0.65;
-}
-
-button:hover:not(:disabled) .vscode-icon {
-  opacity: 1;
-}
-
 /* ─── Description text ───────────────────────────────────── */
 .description-text {
   display: block;

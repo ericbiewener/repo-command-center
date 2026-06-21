@@ -3,6 +3,7 @@ import { app, type BrowserWindow, globalShortcut, Notification, type Tray } from
 import { getStatusBaseDir } from "../src/shared/paths";
 import { readSettings } from "../src/shared/settings";
 import type { ServerInfo, Workstream } from "../src/shared/types";
+import { initDevLog } from "./devLog";
 import { registerIpc } from "./ipc";
 import { startLocalApiServer } from "./localApiServer";
 import { createPrPoller } from "./prPoller";
@@ -96,6 +97,8 @@ app.whenReady().then(async () => {
     shouldHideOnBlur: isDock ? () => false : () => Date.now() - lastShowAt > 500,
     showOnReady: isDevelopment || isDock,
   });
+
+  initDevLog(dashboardWindow.webContents);
 
   // Refresh PR/CI when dashboard is brought to foreground (debounced)
   dashboardWindow.on("focus", debouncedPrRefresh);

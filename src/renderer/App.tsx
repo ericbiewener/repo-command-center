@@ -9,6 +9,11 @@ import ErrorPanel from "./components/ErrorPanel";
 import WorkstreamTable from "./components/WorkstreamTable";
 import { groupWorkstreams } from "./utils/groupWorkstreams";
 
+type DevLogEntry =
+  | { type: "exec"; cmd: string; args: string[]; stdout: string; stderr: string }
+  | { type: "exec:error"; cmd: string; args: string[]; error: string }
+  | { type: "spawn"; cmd: string; args: string[] };
+
 const BridgeUnavailable = () => (
   <main className="app-shell">
     <section className="empty-state">
@@ -54,6 +59,24 @@ const DashboardApp = () => {
         // non-fatal
       });
   }, []);
+
+  useEffect(
+    () =>
+      window.appApi.onDevLog((raw) => {
+        const entry = raw as DevLogEntry;
+        entry.type === "exec"
+          ? (console.groupCollapsed(`[bash] ${entry.cmd} ${entry.args.join(" ")}`),
+            entry.stdout && console.log("stdout:", entry.stdout),
+            entry.stderr && console.log("stderr:", entry.stderr),
+            console.groupEnd())
+          : entry.type === "exec:error"
+            ? (console.group(`[bash:error] ${entry.cmd} ${entry.args.join(" ")}`),
+              console.error("error:", entry.error),
+              console.groupEnd())
+            : console.log(`[bash:spawn] ${entry.cmd} ${entry.args.join(" ")}`);
+      }),
+    [],
+  );
 
   useEffect(() => {
     void refresh();
@@ -141,12 +164,6 @@ const DashboardApp = () => {
     [workstreams],
   );
 
-  const openRepo = useCallback((repoPath: string) => {
-    window.appApi.openInVSCode(repoPath).then((result) => {
-      setError(result.ok ? null : result.error);
-    });
-  }, []);
-
   return (
     <main className="app-shell">
       <div className="search-wrapper">
@@ -184,7 +201,6 @@ const DashboardApp = () => {
         <div className="groups">
           <WorkstreamTable
             groups={groups}
-            onOpenRepo={openRepo}
             customActions={customActions}
             selectedStatusFilePath={selectedWorkstream?.statusFilePath ?? null}
           />

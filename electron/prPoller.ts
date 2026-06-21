@@ -1,8 +1,5 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import type { PrInfo, Workstream } from "../src/shared/types.js";
-
-const execFileAsync = promisify(execFile);
+import { loggedExecFileAsync } from "./devLog";
 
 type GitHubRemote = { host: string; slug: string };
 
@@ -70,7 +67,7 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
   const expectedUrlPrefix = `https://${ghRemote.host}/`;
 
   try {
-    const { stdout } = await execFileAsync(
+    const { stdout } = await loggedExecFileAsync(
       "gh",
       [
         "pr",

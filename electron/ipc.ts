@@ -1,17 +1,17 @@
-import { execFile, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import path from "node:path";
-import { promisify } from "node:util";
 import { ipcMain, shell } from "electron";
 import { listWorkstreams } from "../src/shared/readStatusFiles";
 import { readSettings } from "../src/shared/settings";
 import type { AppInfo, Workstream } from "../src/shared/types";
+import { loggedExecFileAsync, logSpawn } from "./devLog";
 import { loadIconDataUri } from "./iconCache";
-import { openInVSCode } from "./openVSCode";
 import type { PrPoller } from "./prPoller";
 
-const execFileAsync = promisify(execFile);
-
 const BRANCH_RE = /^[a-zA-Z0-9._-]+$/;
+
+const expandEnv = (s: string) =>
+  s.replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, name: string) => process.env[name] ?? `$${name}`);
 
 type AgentHandle = { process: ReturnType<typeof spawn>; branch: string };
 
@@ -33,19 +33,6 @@ export const registerIpc = (options: IpcOptions) => {
     }));
   });
 
-  ipcMain.handle("vscode:open", async (_event, repoPath: unknown) => {
-    if (typeof repoPath !== "string" || !repoPath.trim()) {
-      return { ok: false, error: "Missing repository path." };
-    }
-
-    return openInVSCode(repoPath)
-      .then(() => ({ ok: true as const }))
-      .catch((error: unknown) => ({
-        ok: false as const,
-        error: error instanceof Error ? error.message : String(error),
-      }));
-  });
-
   ipcMain.handle("app:info", options.getAppInfo);
 
   ipcMain.handle("window:hide", () => {
@@ -59,7 +46,10 @@ export const registerIpc = (options: IpcOptions) => {
     return Promise.all(
       actions.map(async (action) => ({
         title: action.title,
-        iconDataUri: action.icon ? ((await loadIconDataUri(action.icon)) ?? undefined) : undefined,
+        iconDataUri: action.icon
+          ? ((await loadIconDataUri(expandEnv(action.icon))) ?? undefined)
+          : undefined,
+        background: action.background,
         command: action.command,
       })),
     );
@@ -81,10 +71,11 @@ export const registerIpc = (options: IpcOptions) => {
       const action = (settings.customActions ?? [])[actionIndex];
       if (!action) return { ok: false as const, error: "Action not found." };
 
-      const [cmd, ...cmdArgs] = action.command.split(/\s+/);
-      if (!cmd) return { ok: false as const, error: "Empty command." };
+      const expandedCmd = expandEnv(action.command).trim();
+      if (!expandedCmd) return { ok: false as const, error: "Empty command." };
 
-      const child = spawn(cmd, [...cmdArgs, repoPath], { stdio: "ignore" });
+      logSpawn("sh", ["-c", expandedCmd, "--", repoPath]);
+      const child = spawn("sh", ["-c", `${expandedCmd} "$@"`, "--", repoPath], { stdio: "ignore" });
       child.unref();
       return { ok: true as const };
     },
@@ -131,6 +122,7 @@ export const registerIpc = (options: IpcOptions) => {
 
       try {
         if (worktreeCmd) {
+          logSpawn("sh", ["-c", worktreeCmd]);
           await new Promise<void>((resolve, reject) => {
             const child = spawn("sh", ["-c", worktreeCmd], {
               cwd: repoPath,
@@ -143,9 +135,13 @@ export const registerIpc = (options: IpcOptions) => {
             child.once("error", reject);
           });
         } else {
-          await execFileAsync("git", ["worktree", "add", "-b", branch, resolvedWorktreePath], {
-            cwd: repoPath,
-          });
+          await loggedExecFileAsync(
+            "git",
+            ["worktree", "add", "-b", branch, resolvedWorktreePath],
+            {
+              cwd: repoPath,
+            },
+          );
         }
       } catch (error: unknown) {
         return {
@@ -161,6 +157,7 @@ export const registerIpc = (options: IpcOptions) => {
             : (settings.claudeCommand ?? "claude");
         const [agentCmd, ...agentArgs] = agentCommand.split(/\s+/);
         if (agentCmd) {
+          logSpawn(agentCmd, [...agentArgs, prompt]);
           const agentProcess = spawn(agentCmd, [...agentArgs, prompt], {
             cwd: resolvedWorktreePath,
             stdio: "ignore",
