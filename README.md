@@ -114,6 +114,55 @@ If `code` is unavailable, it falls back to:
 open -a "Visual Studio Code" <repoPath>
 ```
 
+## Settings
+
+Options are read from `~/.ai-work-status/settings.json`.
+
+### Electron App
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `windowMode` | `"menubar"` \| `"dock"` | `"dock"` | `"menubar"` hides the Dock icon and shows a tray icon; the window auto-hides when it loses focus. `"dock"` runs the app as a regular Dock app. |
+| `prPollIntervalSeconds` | number | `60` | How often (in seconds) to poll GitHub for PR and CI status. |
+| `customActions` | array | `[]` | Buttons added to each workstream card. Each entry has `title` (string), `icon` (optional path to an image file), and `command` (string). The command is spawned with the repo path appended as the last argument. |
+| `worktreeCreateCommand` | string | — | Shell command to create a git worktree. Run with `WORKTREE_PATH` and `BRANCH_NAME` env vars set. If omitted, defaults to `git worktree add -b <branch> <path>`. |
+| `claudeCommand` | string | `"claude"` | Command used to launch the Claude agent when creating a worktree with a prompt. |
+| `codexCommand` | string | `"codex"` | Command used to launch the Codex agent when creating a worktree with a prompt. |
+| `notificationClickCommand` | string | — | Shell command to run when an agent-done notification is clicked. If omitted or the command exits non-zero, the dashboard is shown instead. |
+
+**Example:**
+
+```json
+{
+  "windowMode": "menubar",
+  "prPollIntervalSeconds": 30,
+  "worktreeCreateCommand": "git fetch origin main && git worktree add -b $BRANCH_NAME $WORKTREE_PATH origin/main",
+  "claudeCommand": "claude --dangerously-skip-permissions",
+  "notificationClickCommand": "open -a 'AI Work Command Center'",
+  "customActions": [
+    { "title": "Open Terminal", "icon": "/path/to/terminal.png", "command": "open -a Terminal" }
+  ]
+}
+```
+
+### CLI (`ai-work-status view`)
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `action` | string | — | Shell command written to stdout when a workstream is selected. `$1` is replaced with the repo path. Required for the select action to work. |
+| `deleteAction` | string | — | Shell command written to stdout instead of deleting files when a workstream is deleted. `$1` is replaced with the repo path. If omitted, files are deleted directly. |
+| `multiline` | boolean | `false` | Show the full summary text across multiple lines in the TUI. |
+
+**Example:**
+
+```json
+{
+  "action": "cd $1",
+  "deleteAction": "rm -rf $1",
+  "multiline": true
+}
+```
+
 ## Verification Checklist
 
 1. Run `pnpm install`.

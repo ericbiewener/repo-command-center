@@ -5,7 +5,6 @@ declare global {
   interface Window {
     appApi: {
       listWorkstreams: () => Promise<Workstream[]>;
-      openInVSCode: (repoPath: string) => Promise<{ ok: true } | { ok: false; error: string }>;
       getAppInfo: () => Promise<AppInfo>;
       hideWindow: () => Promise<{ ok: true }>;
       getCustomActions: () => Promise<ResolvedCustomAction[]>;
@@ -22,6 +21,7 @@ declare global {
       }) => Promise<{ ok: true } | { ok: false; error: string }>;
       onWorkstreamsUpdated: (callback: () => void) => () => void;
       onDashboardShown: (callback: () => void) => () => void;
+      onDevLog: (callback: (entry: unknown) => void) => () => void;
       refreshPrStatus: () => Promise<{ ok: true }>;
     };
   }

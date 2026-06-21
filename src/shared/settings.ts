@@ -10,11 +10,21 @@ export type Settings = {
   codexCommand?: string;
   notificationClickCommand?: string;
   prPollIntervalSeconds?: number;
-  customActions?: ReadonlyArray<{ title: string; icon?: string; command: string }>;
+  customActions?: ReadonlyArray<{
+    title: string;
+    icon?: string;
+    background?: string;
+    command: string;
+  }>;
   windowMode?: "menubar" | "dock";
 };
 
-export type ResolvedCustomAction = { title: string; iconDataUri?: string; command: string };
+export type ResolvedCustomAction = {
+  title: string;
+  iconDataUri?: string;
+  background?: string;
+  command: string;
+};
 
 export const readSettings = async () => {
   try {

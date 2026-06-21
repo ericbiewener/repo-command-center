@@ -7,11 +7,10 @@ import WorkstreamCard from "./WorkstreamCard";
 
 type StatusGroupProps = {
   group: WorkstreamRepoGroup;
-  onOpenRepo: (repoPath: string) => void;
   customActions: ResolvedCustomAction[];
 };
 
-const StatusGroup = ({ group, onOpenRepo, customActions }: StatusGroupProps) => {
+const StatusGroup = ({ group, customActions }: StatusGroupProps) => {
   const [showModal, setShowModal] = useState(false);
   const repoPath = group.items[0]?.repoPath ?? "";
 
@@ -66,7 +65,6 @@ const StatusGroup = ({ group, onOpenRepo, customActions }: StatusGroupProps) => 
             <WorkstreamCard
               key={workstream.statusFilePath}
               workstream={workstream}
-              onOpenRepo={onOpenRepo}
               customActions={customActions}
               isSelected={false}
             />

@@ -3,11 +3,9 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
 import type { Workstream } from "../../shared/types";
-import vscodeLogo from "../vscode.svg";
 
 type WorkstreamCardProps = {
   workstream: Workstream;
-  onOpenRepo: (repoPath: string) => void;
   customActions: ResolvedCustomAction[];
   isSelected: boolean;
 };
@@ -19,12 +17,7 @@ const CI_COLORS: Record<string, string> = {
   error: "#8a8478",
 };
 
-const WorkstreamCard = ({
-  workstream,
-  onOpenRepo,
-  customActions,
-  isSelected,
-}: WorkstreamCardProps) => {
+const WorkstreamCard = ({ workstream, customActions, isSelected }: WorkstreamCardProps) => {
   const [executingActions, setExecutingActions] = useState<Record<number, boolean>>(
     Object.create(null),
   );
@@ -121,6 +114,7 @@ const WorkstreamCard = ({
               type="button"
               title={action.title}
               className="action-btn"
+              style={action.background ? { background: action.background } : undefined}
               disabled={executingActions[i] === true}
               onClick={() => void handleCustomAction(i)}
             >
@@ -131,15 +125,6 @@ const WorkstreamCard = ({
               )}
             </button>
           ))}
-          <button
-            type="button"
-            className="action-btn"
-            disabled={!workstream.repoPath}
-            title="Open repo in VS Code"
-            onClick={() => onOpenRepo(workstream.repoPath)}
-          >
-            <img src={vscodeLogo} alt="VS Code" className="vscode-icon" />
-          </button>
         </div>
       </td>
       <td className="col-description">
