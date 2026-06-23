@@ -3,13 +3,13 @@ set -euo pipefail
 
 ENTRIES=(
   src/cli/ai-work-status.ts
-  src/cli/view.ts
+  src/cli/delete-workstream.ts
   src/cli/select-action.ts
 )
 
 OUTPUTS=(
   dist/cli/ai-work-status.js
-  dist/cli/view.js
+  dist/cli/delete-workstream.js
   dist/cli/select-action.js
 )
 
