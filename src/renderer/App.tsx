@@ -102,13 +102,16 @@ const DashboardApp = () => {
                 entry.stderr && console.log("stderr:", entry.stderr),
                 console.groupEnd())
               : console.log(`[bash:spawn] ${entry.cmd} ${entry.args.join(" ")}`);
-        if (entry.type === "spawn:done" && entry.stderr) {
-          const id = ++toastIdRef.current;
-          setToasts((prev) => [...prev, { id, text: entry.stderr }]);
-          setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
+        if (entry.type === "spawn:done") {
+          if (entry.stderr) {
+            const id = ++toastIdRef.current;
+            setToasts((prev) => [...prev, { id, text: entry.stderr }]);
+            setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
+          }
+          refreshFast();
         }
       }),
-    [],
+    [refreshFast],
   );
 
   useEffect(() => {
