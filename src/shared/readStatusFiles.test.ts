@@ -48,7 +48,7 @@ describe("listWorkstreams", () => {
       "utf8",
     );
 
-    const workstreams = await listWorkstreams(root);
+    const workstreams = await listWorkstreams({}, root);
 
     expect(workstreams).toHaveLength(2);
     expect(workstreams[0]?.id).toBe("repo__main");

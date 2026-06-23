@@ -139,6 +139,7 @@ export const createDashboardWindow = (options: DashboardWindowOptions = {}) => {
 
   if (process.env.ELECTRON_RENDERER_URL) {
     void window.loadURL(process.env.ELECTRON_RENDERER_URL);
+    window.webContents.openDevTools();
   } else {
     void window.loadFile(path.join(__dirname, "../renderer/index.html"));
   }

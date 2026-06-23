@@ -115,13 +115,20 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
   }
 };
 
-export const listWorkstreams = async (statusRoot = getStatusReposDir()) => {
+export const listWorkstreams = async (
+  knownGitStatuses: Record<string, Workstream["gitStatus"]> = {},
+  statusRoot = getStatusReposDir(),
+) => {
   const files = await listStatusFiles(statusRoot);
   const parsed = await Promise.all(files.map((file) => parseStatusFile(file)));
   const withGitStatus = await Promise.all(
     parsed.map(async (ws) => ({
       ...ws,
-      gitStatus: ws.isValid ? await getWorkstreamGitStatus(ws.repoPath) : null,
+      gitStatus: ws.isValid
+        ? ws.statusFilePath in knownGitStatuses
+          ? knownGitStatuses[ws.statusFilePath]
+          : await getWorkstreamGitStatus(ws.repoPath)
+        : null,
     })),
   );
 

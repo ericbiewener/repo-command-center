@@ -225,7 +225,7 @@ const runTUI = (
 
     const onKey = (
       _: unknown,
-      key: { name: string; ctrl: boolean; sequence: string } | undefined,
+      key: { name: string; ctrl: boolean; meta?: boolean; sequence: string } | undefined,
     ) => {
       if (!key) return;
 
@@ -263,6 +263,16 @@ const runTUI = (
             ? { type: "delete", row, filter, cursor }
             : { type: "select", row, filter, cursor },
         );
+        return;
+      }
+
+      if (key.meta && (key.name === "backspace" || key.name === "delete")) {
+        if (!filteredRows.length) return;
+        const row = filteredRows[cursor];
+        if (row) {
+          cleanup();
+          resolve({ type: "delete", row, filter, cursor });
+        }
         return;
       }
 
@@ -316,7 +326,25 @@ const run = async () => {
     process.stderr.write(CLEAR + pc.dim("  Loading…\n"));
     const allWorkstreams = await listWorkstreams();
     const groups = groupWorkstreams(allWorkstreams);
-    const rows = getFilteredRows(groups, deleteArg);
+
+    const resolvedArg = path.resolve(deleteArg);
+    const isDir = await fs
+      .stat(resolvedArg)
+      .then((s) => s.isDirectory())
+      .catch(() => false);
+
+    let rows: BranchRow[];
+    if (isDir) {
+      rows = groups.flatMap((group) =>
+        group.branches
+          .filter((b) => b.items.some((w) => path.resolve(w.repoPath) === resolvedArg))
+          .map((branch) => ({ group, branch })),
+      );
+    } else {
+      rows = groups.flatMap((group) =>
+        group.branches.filter((b) => b.branch === deleteArg).map((branch) => ({ group, branch })),
+      );
+    }
 
     if (rows.length === 0) {
       process.stderr.write(`No workstreams found matching: ${deleteArg}\n`);
