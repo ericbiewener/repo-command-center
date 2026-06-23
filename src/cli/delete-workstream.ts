@@ -57,7 +57,9 @@ if (rows.length === 0) {
 
 if (rows.length > 1) {
   process.stderr.write(
-    `Multiple workstreams match "${deleteArg}":\n${rows.map((r) => `  ${r.group.repoName} / ${r.branch.branch}`).join("\n")}\n`,
+    `Multiple workstreams match "${deleteArg}":\n${rows
+      .map((r) => `  ${r.group.repoName} / ${r.branch.branch}`)
+      .join("\n")}\n`,
   );
   process.exit(1);
 }
@@ -65,4 +67,4 @@ if (rows.length > 1) {
 const row = rows[0];
 assert(row);
 await deleteWorkstreamFiles(row.branch.items);
-process.stderr.write(`Deleted ${row.group.repoName} / ${row.branch.branch}\n`);
+process.stdout.write(`Deleted ${row.group.repoName} / ${row.branch.branch}\n`);
