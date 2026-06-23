@@ -1,13 +1,20 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("appApi", {
-  listWorkstreams: () => ipcRenderer.invoke("workstreams:list"),
+  listWorkstreams: (gitStatusCache?: object) =>
+    ipcRenderer.invoke("workstreams:list", gitStatusCache),
   getAppInfo: () => ipcRenderer.invoke("app:info"),
   hideWindow: () => ipcRenderer.invoke("window:hide"),
   getCustomActions: () => ipcRenderer.invoke("settings:getCustomActions"),
   openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
-  executeCustomAction: (actionIndex: number, repoPath: string) =>
-    ipcRenderer.invoke("customActions:execute", actionIndex, repoPath),
+  executeCustomAction: (actionIndex: number, repoPath: string, branch: string) =>
+    ipcRenderer.invoke("customActions:execute", actionIndex, repoPath, branch),
+  executeAction: (repoPath: string, branch: string) =>
+    ipcRenderer.invoke("action:execute", repoPath, branch),
+  executeDeleteAction: (repoPath: string, branch: string) =>
+    ipcRenderer.invoke("deleteAction:execute", repoPath, branch),
+  executeDeleteActionSecondary: (repoPath: string, branch: string) =>
+    ipcRenderer.invoke("deleteActionSecondary:execute", repoPath, branch),
   createWorktree: (params: {
     repoPath: string;
     branch: string;

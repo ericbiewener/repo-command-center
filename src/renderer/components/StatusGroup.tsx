@@ -67,6 +67,7 @@ const StatusGroup = ({ group, customActions }: StatusGroupProps) => {
               workstream={workstream}
               customActions={customActions}
               isSelected={false}
+              onAction={() => {}}
             />
           ))}
         </tbody>

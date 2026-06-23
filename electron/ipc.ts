@@ -4,7 +4,7 @@ import { ipcMain, shell } from "electron";
 import { listWorkstreams } from "../src/shared/readStatusFiles";
 import { readSettings } from "../src/shared/settings";
 import type { AppInfo, Workstream } from "../src/shared/types";
-import { loggedExecFileAsync, logSpawn } from "./devLog";
+import { loggedExecFileAsync, loggedSpawn, logSpawn } from "./devLog";
 import { loadIconDataUri } from "./iconCache";
 import type { PrPoller } from "./prPoller";
 
@@ -24,8 +24,12 @@ type IpcOptions = {
 };
 
 export const registerIpc = (options: IpcOptions) => {
-  ipcMain.handle("workstreams:list", async () => {
-    const workstreams = await listWorkstreams();
+  ipcMain.handle("workstreams:list", async (_event, rawCache: unknown) => {
+    const knownGitStatuses =
+      rawCache !== null && typeof rawCache === "object" && !Array.isArray(rawCache)
+        ? (rawCache as Record<string, Workstream["gitStatus"]>)
+        : {};
+    const workstreams = await listWorkstreams(knownGitStatuses);
     options.cachedWorkstreams.value = workstreams;
     return workstreams.map((ws) => ({
       ...ws,
@@ -62,8 +66,12 @@ export const registerIpc = (options: IpcOptions) => {
 
   ipcMain.handle(
     "customActions:execute",
-    async (_event, actionIndex: unknown, repoPath: unknown) => {
-      if (typeof actionIndex !== "number" || typeof repoPath !== "string") {
+    async (_event, actionIndex: unknown, repoPath: unknown, branch: unknown) => {
+      if (
+        typeof actionIndex !== "number" ||
+        typeof repoPath !== "string" ||
+        typeof branch !== "string"
+      ) {
         return { ok: false as const, error: "Invalid arguments." };
       }
 
@@ -74,8 +82,56 @@ export const registerIpc = (options: IpcOptions) => {
       const expandedCmd = expandEnv(action.command).trim();
       if (!expandedCmd) return { ok: false as const, error: "Empty command." };
 
-      logSpawn("sh", ["-c", expandedCmd, "--", repoPath]);
-      const child = spawn("sh", ["-c", `${expandedCmd} "$@"`, "--", repoPath], { stdio: "ignore" });
+      const child = loggedSpawn("sh", ["-c", `${expandedCmd} "$@"`, "--", repoPath, branch]);
+      child.unref();
+      return { ok: true as const };
+    },
+  );
+
+  ipcMain.handle("action:execute", async (_event, repoPath: unknown, branch: unknown) => {
+    if (typeof repoPath !== "string" || typeof branch !== "string")
+      return { ok: false as const, error: "Invalid arguments." };
+    const settings = await readSettings();
+    if (!settings.action) return { ok: false as const, error: "No action configured." };
+    const expandedCmd = expandEnv(settings.action)
+      .replaceAll("$1", repoPath)
+      .replaceAll("$2", branch)
+      .trim();
+    if (!expandedCmd) return { ok: false as const, error: "Empty command." };
+    const child = loggedSpawn("sh", ["-c", expandedCmd]);
+    child.unref();
+    return { ok: true as const };
+  });
+
+  ipcMain.handle("deleteAction:execute", async (_event, repoPath: unknown, branch: unknown) => {
+    if (typeof repoPath !== "string" || typeof branch !== "string")
+      return { ok: false as const, error: "Invalid arguments." };
+    const settings = await readSettings();
+    if (!settings.deleteAction) return { ok: false as const, error: "No deleteAction configured." };
+    const expandedCmd = expandEnv(settings.deleteAction)
+      .replaceAll("$1", repoPath)
+      .replaceAll("$2", branch)
+      .trim();
+    if (!expandedCmd) return { ok: false as const, error: "Empty command." };
+    const child = loggedSpawn("sh", ["-c", expandedCmd]);
+    child.unref();
+    return { ok: true as const };
+  });
+
+  ipcMain.handle(
+    "deleteActionSecondary:execute",
+    async (_event, repoPath: unknown, branch: unknown) => {
+      if (typeof repoPath !== "string" || typeof branch !== "string")
+        return { ok: false as const, error: "Invalid arguments." };
+      const settings = await readSettings();
+      if (!settings.deleteActionSecondary)
+        return { ok: false as const, error: "No deleteActionSecondary configured." };
+      const expandedCmd = expandEnv(settings.deleteActionSecondary)
+        .replaceAll("$1", repoPath)
+        .replaceAll("$2", branch)
+        .trim();
+      if (!expandedCmd) return { ok: false as const, error: "Empty command." };
+      const child = loggedSpawn("sh", ["-c", expandedCmd]);
       child.unref();
       return { ok: true as const };
     },

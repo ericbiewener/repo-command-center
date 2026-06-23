@@ -3,6 +3,8 @@ set -euo pipefail
 
 [ "${AGENT_HOOK_CHILD:-}" = "1" ] && exit 0
 
+source "$(dirname "${BASH_SOURCE[0]}")/_root.sh"
+
 # Detach from Claude Code's process tracking so the foreground session isn't blocked.
 # Re-exec ourselves with AGENT_HOOK_RUNNING=1 via nohup and exit immediately.
 if [ "${AGENT_HOOK_RUNNING:-}" != "1" ]; then
@@ -13,9 +15,8 @@ if [ "${AGENT_HOOK_RUNNING:-}" != "1" ]; then
   exit 0
 fi
 
-SCRIPT_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-STATUS_SCRIPT="$SCRIPT_ROOT/dist/cli/ai-work-status.js"
-REPO_ROOT="${WORKTREE_ROOT:-$SCRIPT_ROOT}"
+STATUS_SCRIPT="$_COMMAND_CENTER_ROOT/dist/cli/ai-work-status.js"
+REPO_ROOT="${WORKTREE_ROOT:-$_COMMAND_CENTER_ROOT}"
 AGENT="${AGENT:?AGENT env var must be set}"
 
 PROMPT="Analyze the context of the previous agent session to determine a TITLE and SUMMARY of what was done. If no files were actually changed, STOP and DO NOTHING FURTHER. Otherwise, execute this command with those values:

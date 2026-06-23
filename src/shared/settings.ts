@@ -4,6 +4,7 @@ import { getSettingsPath } from "./paths.js";
 export type Settings = {
   action?: string;
   deleteAction?: string;
+  deleteActionSecondary?: string;
   multiline?: boolean;
   worktreeCreateCommand?: string;
   claudeCommand?: string;

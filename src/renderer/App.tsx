@@ -12,7 +12,17 @@ import { groupWorkstreams } from "./utils/groupWorkstreams";
 type DevLogEntry =
   | { type: "exec"; cmd: string; args: string[]; stdout: string; stderr: string }
   | { type: "exec:error"; cmd: string; args: string[]; error: string }
-  | { type: "spawn"; cmd: string; args: string[] };
+  | { type: "spawn"; cmd: string; args: string[] }
+  | {
+      type: "spawn:done";
+      cmd: string;
+      args: string[];
+      stdout: string;
+      stderr: string;
+      exitCode: number | null;
+    };
+
+type Toast = { id: number; text: string };
 
 const BridgeUnavailable = () => (
   <main className="app-shell">
@@ -32,6 +42,17 @@ const DashboardApp = () => {
   const [error, setError] = useState<string | null>(null);
   const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
   const [query, setQuery] = useState("");
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastIdRef = useRef(0);
+  const workstreamsRef = useRef(workstreams);
+  workstreamsRef.current = workstreams;
+
+  const refreshFast = useCallback(() => {
+    const gitStatusCache = Object.fromEntries(
+      workstreamsRef.current.map((ws) => [ws.statusFilePath, ws.gitStatus]),
+    );
+    void window.appApi.listWorkstreams(gitStatusCache).then(setWorkstreams);
+  }, []);
   // Track selected item by statusFilePath so it survives filter changes gracefully
   const [anchorPath, setAnchorPath] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -73,7 +94,19 @@ const DashboardApp = () => {
             ? (console.group(`[bash:error] ${entry.cmd} ${entry.args.join(" ")}`),
               console.error("error:", entry.error),
               console.groupEnd())
-            : console.log(`[bash:spawn] ${entry.cmd} ${entry.args.join(" ")}`);
+            : entry.type === "spawn:done"
+              ? (console.group(
+                  `[bash:spawn:done] ${entry.cmd} ${entry.args.join(" ")} (exit ${entry.exitCode})`,
+                ),
+                entry.stdout && console.log("stdout:", entry.stdout),
+                entry.stderr && console.log("stderr:", entry.stderr),
+                console.groupEnd())
+              : console.log(`[bash:spawn] ${entry.cmd} ${entry.args.join(" ")}`);
+        if (entry.type === "spawn:done" && entry.stderr) {
+          const id = ++toastIdRef.current;
+          setToasts((prev) => [...prev, { id, text: entry.stderr }]);
+          setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
+        }
       }),
     [],
   );
@@ -122,7 +155,7 @@ const DashboardApp = () => {
     }
   }, [refresh]);
 
-  // Keyboard navigation — arrow keys move selection, Enter triggers first custom action
+  // Keyboard navigation — arrow keys move selection, Enter triggers action, Cmd+Backspace/Delete triggers deleteAction
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === "ArrowDown") {
@@ -133,13 +166,38 @@ const DashboardApp = () => {
         event.preventDefault();
         const prevIdx = Math.max(effectiveIndex - 1, 0);
         setAnchorPath(flatWorkstreams[prevIdx]?.statusFilePath ?? null);
-      } else if (event.key === "Enter" && selectedWorkstream && customActions.length > 0) {
-        void window.appApi.executeCustomAction(0, selectedWorkstream.repoPath);
+      } else if (event.key === "Enter" && selectedWorkstream) {
+        void window.appApi.executeAction(selectedWorkstream.repoPath, selectedWorkstream.branch);
+        refreshFast();
+      } else if (
+        event.metaKey &&
+        !event.shiftKey &&
+        (event.key === "Backspace" || event.key === "Delete") &&
+        selectedWorkstream
+      ) {
+        event.preventDefault();
+        void window.appApi.executeDeleteAction(
+          selectedWorkstream.repoPath,
+          selectedWorkstream.branch,
+        );
+        refreshFast();
+      } else if (
+        event.metaKey &&
+        event.shiftKey &&
+        (event.key === "Backspace" || event.key === "Delete") &&
+        selectedWorkstream
+      ) {
+        event.preventDefault();
+        void window.appApi.executeDeleteActionSecondary(
+          selectedWorkstream.repoPath,
+          selectedWorkstream.branch,
+        );
+        refreshFast();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [flatWorkstreams, effectiveIndex, selectedWorkstream, customActions]);
+  }, [flatWorkstreams, effectiveIndex, selectedWorkstream, refreshFast]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -165,48 +223,69 @@ const DashboardApp = () => {
   );
 
   return (
-    <main className="app-shell">
-      <div className="search-wrapper">
-        <Search size={15} className="search-icon" />
-        <input
-          ref={searchInputRef}
-          className="search-input"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search worktrees…"
-          // biome-ignore lint/a11y/noAutofocus: intentional — this is a launcher UI
-          autoFocus
-          spellCheck={false}
-        />
+    <>
+      <main className="app-shell">
+        <div className="search-wrapper">
+          <Search size={15} className="search-icon" />
+          <input
+            ref={searchInputRef}
+            className="search-input"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search worktrees…"
+            // biome-ignore lint/a11y/noAutofocus: intentional — this is a launcher UI
+            autoFocus
+            spellCheck={false}
+          />
+          <AnimatePresence>
+            {isRefreshing ? (
+              <motion.span
+                key="refresh-spinner"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.15 }}
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                <Loader2 size={14} className="search-icon spin" />
+              </motion.span>
+            ) : null}
+          </AnimatePresence>
+        </div>
+        <ErrorPanel message={error} invalidWorkstreams={invalidWorkstreams} />
+
+        {!isLoading && groups.length === 0 ? (
+          <EmptyState statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"} />
+        ) : (
+          <div className="groups">
+            <WorkstreamTable
+              groups={groups}
+              customActions={customActions}
+              selectedStatusFilePath={selectedWorkstream?.statusFilePath ?? null}
+              onAction={refreshFast}
+            />
+          </div>
+        )}
+      </main>
+      <div className="toast-layer">
         <AnimatePresence>
-          {isRefreshing ? (
-            <motion.span
-              key="refresh-spinner"
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.7 }}
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              className="toast-item"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.15 }}
-              style={{ display: "flex", alignItems: "center" }}
+              onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
             >
-              <Loader2 size={14} className="search-icon spin" />
-            </motion.span>
-          ) : null}
+              <span className="toast-label">stderr</span>
+              <pre className="toast-text">{toast.text}</pre>
+            </motion.div>
+          ))}
         </AnimatePresence>
       </div>
-      <ErrorPanel message={error} invalidWorkstreams={invalidWorkstreams} />
-
-      {!isLoading && groups.length === 0 ? (
-        <EmptyState statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"} />
-      ) : (
-        <div className="groups">
-          <WorkstreamTable
-            groups={groups}
-            customActions={customActions}
-            selectedStatusFilePath={selectedWorkstream?.statusFilePath ?? null}
-          />
-        </div>
-      )}
-    </main>
+    </>
   );
 };
 

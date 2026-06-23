@@ -8,6 +8,7 @@ type WorkstreamCardProps = {
   workstream: Workstream;
   customActions: ResolvedCustomAction[];
   isSelected: boolean;
+  onAction: () => void;
 };
 
 const CI_COLORS: Record<string, string> = {
@@ -17,7 +18,12 @@ const CI_COLORS: Record<string, string> = {
   error: "#8a8478",
 };
 
-const WorkstreamCard = ({ workstream, customActions, isSelected }: WorkstreamCardProps) => {
+const WorkstreamCard = ({
+  workstream,
+  customActions,
+  isSelected,
+  onAction,
+}: WorkstreamCardProps) => {
   const [executingActions, setExecutingActions] = useState<Record<number, boolean>>(
     Object.create(null),
   );
@@ -28,8 +34,9 @@ const WorkstreamCard = ({ workstream, customActions, isSelected }: WorkstreamCar
 
   const handleCustomAction = async (index: number) => {
     setExecutingActions((prev) => ({ ...prev, [index]: true }));
-    await window.appApi.executeCustomAction(index, workstream.repoPath);
+    await window.appApi.executeCustomAction(index, workstream.repoPath, workstream.branch);
     setExecutingActions((prev) => ({ ...prev, [index]: false }));
+    onAction();
   };
 
   return (
@@ -39,6 +46,10 @@ const WorkstreamCard = ({ workstream, customActions, isSelected }: WorkstreamCar
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
+      onClick={() => {
+        void window.appApi.executeAction(workstream.repoPath, workstream.branch);
+        onAction();
+      }}
     >
       <td className="col-branch">
         <span className="branch-name">{workstream.branch}</span>
@@ -86,7 +97,10 @@ const WorkstreamCard = ({ workstream, customActions, isSelected }: WorkstreamCar
           <button
             type="button"
             className={`pr-link${prInfo.merged ? " pr-merged" : ""}`}
-            onClick={() => void window.appApi.openExternal(prInfo.url)}
+            onClick={(e) => {
+              e.stopPropagation();
+              void window.appApi.openExternal(prInfo.url);
+            }}
             title={`Open PR #${prInfo.number}${prInfo.merged ? " (merged)" : ""}`}
           >
             {prInfo.merged ? <GitMerge size={11} /> : <GitPullRequest size={11} />}#{prInfo.number}
@@ -106,27 +120,32 @@ const WorkstreamCard = ({ workstream, customActions, isSelected }: WorkstreamCar
         ) : null}
       </td>
 
-      <td className="col-actions">
-        <div className="actions-cell">
-          {customActions.map((action, i) => (
-            <button
-              key={action.title}
-              type="button"
-              title={action.title}
-              className="action-btn"
-              style={action.background ? { background: action.background } : undefined}
-              disabled={executingActions[i] === true}
-              onClick={() => void handleCustomAction(i)}
-            >
-              {action.iconDataUri ? (
-                <img src={action.iconDataUri} alt={action.title} className="action-icon" />
-              ) : (
-                action.title
-              )}
-            </button>
-          ))}
-        </div>
-      </td>
+      {customActions.length > 0 ? (
+        <td className="col-actions">
+          <div className="actions-cell">
+            {customActions.map((action, i) => (
+              <button
+                key={action.title}
+                type="button"
+                title={action.title}
+                className="action-btn"
+                style={action.background ? { background: action.background } : undefined}
+                disabled={executingActions[i] === true}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleCustomAction(i);
+                }}
+              >
+                {action.iconDataUri ? (
+                  <img src={action.iconDataUri} alt={action.title} className="action-icon" />
+                ) : (
+                  action.title
+                )}
+              </button>
+            ))}
+          </div>
+        </td>
+      ) : null}
       <td className="col-description">
         {workstream.summary ? (
           <span className="description-text" title={workstream.summary}>
