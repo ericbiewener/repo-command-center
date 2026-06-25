@@ -26,13 +26,21 @@ export type DevLogEntry =
 
 const sendLog = (entry: DevLogEntry) => _wc?.send("dev:log", entry);
 
+type LoggedExecFileOptions = ExecFileOptions & {
+  shouldLogError?: (error: unknown) => boolean;
+};
+
 export const loggedExecFileAsync = async (
   cmd: string,
   args: string[],
-  opts?: ExecFileOptions,
+  opts?: LoggedExecFileOptions,
 ): Promise<{ stdout: string; stderr: string }> => {
+  const { shouldLogError, ...execFileOptions } = opts ?? {};
   try {
-    const result = (await _execFileAsync(cmd, args, opts)) as { stdout: string; stderr: string };
+    const result = (await _execFileAsync(cmd, args, execFileOptions)) as {
+      stdout: string;
+      stderr: string;
+    };
     sendLog({
       type: "exec",
       cmd,
@@ -42,7 +50,9 @@ export const loggedExecFileAsync = async (
     });
     return result;
   } catch (err) {
-    sendLog({ type: "exec:error", cmd, args, error: String(err) });
+    if (shouldLogError?.(err) ?? true) {
+      sendLog({ type: "exec:error", cmd, args, error: String(err) });
+    }
     throw err;
   }
 };
