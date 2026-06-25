@@ -7,4 +7,4 @@ STATUS_SCRIPT="$_COMMAND_CENTER_ROOT/dist/cli/ai-work-status.js"
 REPO="${REPO:-$(git rev-parse --show-toplevel)}"
 AGENT="${AGENT:-claude}"
 
-node "$STATUS_SCRIPT" update --repo "$REPO" --agent "$AGENT" ${TITLE:+--title "$TITLE"} ${SUMMARY:+--summary "$SUMMARY"}
+"$_COMMAND_CENTER_NODE" "$STATUS_SCRIPT" update --repo "$REPO" --agent "$AGENT" ${TITLE:+--title "$TITLE"} ${SUMMARY:+--summary "$SUMMARY"}

@@ -57,6 +57,11 @@ const extendedEnv = {
   PATH: `${MAC_EXTRA_PATHS}:${process.env.PATH ?? ""}`,
 };
 
+const isNoPullRequestsFoundError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("no pull requests found");
+};
+
 const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
   const ghRemote = parseGitHubRemote(workstream.repoRemote);
   if (!ghRemote) return null;
@@ -78,7 +83,11 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
         "--json",
         "number,url,statusCheckRollup,state",
       ],
-      { timeout: 10_000, env: extendedEnv },
+      {
+        timeout: 10_000,
+        env: extendedEnv,
+        shouldLogError: (error) => !isNoPullRequestsFoundError(error),
+      },
     );
 
     if (!stdout.trim()) return null;
@@ -103,8 +112,8 @@ const fetchPrInfo = async (workstream: Workstream): Promise<PrInfo | null> => {
       merged: data.state === "MERGED",
     };
   } catch (error: unknown) {
+    if (isNoPullRequestsFoundError(error)) return null;
     const message = error instanceof Error ? error.message : String(error);
-    if (message.includes("no pull requests found")) return null;
     return { fetchError: message };
   }
 };
