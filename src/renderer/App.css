@@ -230,6 +230,25 @@ code {
   color: var(--fg-3);
 }
 
+/* ─── View toggle button ─────────────────────────────────── */
+.view-toggle-btn {
+  min-height: unset;
+  height: 30px;
+  width: 30px;
+  padding: 0;
+  border-radius: 6px;
+  color: var(--fg-3);
+  flex-shrink: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+.view-toggle-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--b);
+  color: var(--fg-2);
+}
+
 /* ─── Groups (main scrollable area) ─────────────────────── */
 .groups {
   flex: 1;
@@ -416,6 +435,19 @@ code {
 
 .workstream-row.selected td:first-child {
   border-left: 3px solid var(--accent);
+}
+
+/* ─── Repo column (unified view) ────────────────────────── */
+.col-repo {
+  white-space: nowrap;
+}
+
+.repo-name {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--local);
+  letter-spacing: -0.02em;
 }
 
 /* ─── Branch name ────────────────────────────────────────── */

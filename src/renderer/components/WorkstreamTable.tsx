@@ -2,6 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
+import type { Workstream } from "../../shared/types";
 import type { WorkstreamRepoGroup } from "../utils/groupWorkstreams";
 import CreateWorktreeModal from "./CreateWorktreeModal";
 import WorkstreamCard from "./WorkstreamCard";
@@ -71,6 +72,8 @@ type WorkstreamTableProps = {
   customActions: ResolvedCustomAction[];
   selectedStatusFilePath: string | null;
   onAction: () => void;
+  unified?: boolean;
+  sortedWorkstreams?: Workstream[];
 };
 
 const WorkstreamTable = ({
@@ -78,6 +81,8 @@ const WorkstreamTable = ({
   customActions,
   selectedStatusFilePath,
   onAction,
+  unified = false,
+  sortedWorkstreams = [],
 }: WorkstreamTableProps) => {
   const hasActions = customActions.length > 0;
   const columnCount = hasActions ? 8 : 7;
@@ -97,6 +102,7 @@ const WorkstreamTable = ({
     <table className="workstream-table">
       <thead>
         <tr>
+          {unified ? <th>Repo</th> : null}
           <th>Branch</th>
           <th>Title</th>
           <th>Status</th>
@@ -123,16 +129,27 @@ const WorkstreamTable = ({
         </tr>
       </thead>
       <tbody>
-        {groups.map((group) => (
-          <GroupSection
-            key={group.repoKey}
-            group={group}
-            customActions={customActions}
-            selectedStatusFilePath={selectedStatusFilePath}
-            columnCount={columnCount}
-            onAction={onAction}
-          />
-        ))}
+        {unified
+          ? sortedWorkstreams.map((ws) => (
+              <WorkstreamCard
+                key={ws.statusFilePath}
+                workstream={ws}
+                customActions={customActions}
+                isSelected={ws.statusFilePath === selectedStatusFilePath}
+                showRepo
+                onAction={onAction}
+              />
+            ))
+          : groups.map((group) => (
+              <GroupSection
+                key={group.repoKey}
+                group={group}
+                customActions={customActions}
+                selectedStatusFilePath={selectedStatusFilePath}
+                columnCount={columnCount}
+                onAction={onAction}
+              />
+            ))}
       </tbody>
     </table>
   );
