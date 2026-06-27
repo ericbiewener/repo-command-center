@@ -1,5 +1,5 @@
 import fuzzysort from "fuzzysort";
-import { Loader2, Search } from "lucide-react";
+import { Layers, LayoutList, Loader2, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedCustomAction } from "../shared/settings";
@@ -42,6 +42,7 @@ const DashboardApp = () => {
   const [error, setError] = useState<string | null>(null);
   const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
   const [query, setQuery] = useState("");
+  const [unified, setUnified] = useState(() => localStorage.getItem("cc-unified-view") === "true");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(0);
   const workstreamsRef = useRef(workstreams);
@@ -130,6 +131,14 @@ const DashboardApp = () => {
     };
   }, [refresh]);
 
+  const toggleUnified = useCallback(() => {
+    setUnified((prev) => {
+      const next = !prev;
+      localStorage.setItem("cc-unified-view", String(next));
+      return next;
+    });
+  }, []);
+
   const filteredWorkstreams = useMemo(
     () =>
       query.trim()
@@ -139,7 +148,19 @@ const DashboardApp = () => {
   );
 
   const groups = useMemo(() => groupWorkstreams(filteredWorkstreams), [filteredWorkstreams]);
-  const flatWorkstreams = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+
+  const sortedWorkstreams = useMemo(
+    () =>
+      unified
+        ? [...filteredWorkstreams].sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0))
+        : [],
+    [filteredWorkstreams, unified],
+  );
+
+  const flatWorkstreams = useMemo(
+    () => (unified ? sortedWorkstreams : groups.flatMap((g) => g.items)),
+    [unified, sortedWorkstreams, groups],
+  );
 
   // Derive selected index from anchorPath — falls back to 0 when the anchor isn't visible
   const anchoredIndex = useMemo(
@@ -254,6 +275,15 @@ const DashboardApp = () => {
               </motion.span>
             ) : null}
           </AnimatePresence>
+          <button
+            type="button"
+            className="view-toggle-btn"
+            title={unified ? "Switch to grouped view" : "Switch to flat view"}
+            aria-label={unified ? "Switch to grouped view" : "Switch to flat view"}
+            onClick={toggleUnified}
+          >
+            {unified ? <Layers size={15} /> : <LayoutList size={15} />}
+          </button>
         </div>
         <ErrorPanel message={error} invalidWorkstreams={invalidWorkstreams} />
 
@@ -266,6 +296,8 @@ const DashboardApp = () => {
               customActions={customActions}
               selectedStatusFilePath={selectedWorkstream?.statusFilePath ?? null}
               onAction={refreshFast}
+              unified={unified}
+              sortedWorkstreams={sortedWorkstreams}
             />
           </div>
         )}

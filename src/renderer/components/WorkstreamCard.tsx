@@ -8,6 +8,7 @@ type WorkstreamCardProps = {
   workstream: Workstream;
   customActions: ResolvedCustomAction[];
   isSelected: boolean;
+  showRepo?: boolean;
   onAction: () => void;
 };
 
@@ -22,6 +23,7 @@ const WorkstreamCard = ({
   workstream,
   customActions,
   isSelected,
+  showRepo = false,
   onAction,
 }: WorkstreamCardProps) => {
   const [executingActions, setExecutingActions] = useState<Record<number, boolean>>(
@@ -51,6 +53,11 @@ const WorkstreamCard = ({
         onAction();
       }}
     >
+      {showRepo ? (
+        <td className="col-repo">
+          <span className="repo-name">{workstream.repoName || "Unknown"}</span>
+        </td>
+      ) : null}
       <td className="col-branch">
         <span className="branch-name">{workstream.branch}</span>
         {!workstream.isValid ? (
