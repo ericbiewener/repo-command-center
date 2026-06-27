@@ -509,6 +509,31 @@ code {
 }
 
 /* ─── PR column ──────────────────────────────────────────── */
+.th-pr-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.delete-merged-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--fg-3);
+  cursor: pointer;
+  border-radius: 3px;
+  line-height: 1;
+}
+
+.delete-merged-btn:hover {
+  color: var(--s-blk);
+  background: var(--s-blk-bg);
+  border-color: var(--s-blk-bd);
+}
+
 .pr-fetch-error {
   color: var(--s-blk);
 }

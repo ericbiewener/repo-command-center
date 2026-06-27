@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
@@ -81,6 +81,18 @@ const WorkstreamTable = ({
 }: WorkstreamTableProps) => {
   const hasActions = customActions.length > 0;
   const columnCount = hasActions ? 8 : 7;
+
+  const mergedWorkstreams = groups
+    .flatMap((g) => g.items)
+    .filter((ws) => ws.prInfo !== null && !("fetchError" in ws.prInfo) && ws.prInfo.merged);
+
+  const handleDeleteMerged = () => {
+    for (const ws of mergedWorkstreams) {
+      void window.appApi.executeDeleteAction(ws.repoPath, ws.branch);
+    }
+    onAction();
+  };
+
   return (
     <table className="workstream-table">
       <thead>
@@ -89,7 +101,22 @@ const WorkstreamTable = ({
           <th>Title</th>
           <th>Status</th>
           <th title="Uncommitted files or unpushed commits">Δ</th>
-          <th>PR</th>
+          <th>
+            <div className="th-pr-header">
+              PR
+              {mergedWorkstreams.length > 0 ? (
+                <button
+                  type="button"
+                  title="Delete all merged workstreams"
+                  aria-label="Delete all merged workstreams"
+                  className="delete-merged-btn"
+                  onClick={handleDeleteMerged}
+                >
+                  <Trash2 size={10} />
+                </button>
+              ) : null}
+            </div>
+          </th>
           <th>CI</th>
           {hasActions ? <th>Actions</th> : null}
           <th className="col-description">Description</th>
