@@ -201,33 +201,20 @@ code {
   overflow: hidden;
 }
 
-/* ─── Search bar ─────────────────────────────────────────── */
-.search-wrapper {
+/* ─── Top toolbar ────────────────────────────────────────── */
+.top-toolbar {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   padding: 10px 18px;
   border-bottom: 1px solid var(--b);
   flex-shrink: 0;
 }
 
-.search-icon {
+.toolbar-icon {
   color: var(--fg-3);
   flex-shrink: 0;
-}
-
-.search-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  color: var(--fg);
-  font-size: 18px;
-  outline: none;
-  min-width: 0;
-}
-
-.search-input::placeholder {
-  color: var(--fg-3);
 }
 
 /* ─── View toggle button ─────────────────────────────────── */
@@ -315,11 +302,6 @@ code {
   width: 100%;
   border-collapse: collapse;
   font-size: 18px;
-}
-
-.col-description {
-  width: 9999px;
-  white-space: normal;
 }
 
 /* ─── Table head (sticky) ────────────────────────────────── */
@@ -474,62 +456,6 @@ code {
   white-space: nowrap;
 }
 
-/* ─── Status pill ────────────────────────────────────────── */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
-  border-radius: 5px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  background: var(--s-done-bg);
-  color: var(--s-done);
-}
-
-.status-pill-running {
-  background: var(--s-run-bg);
-  color: var(--s-run);
-  border: 1px solid var(--s-run-bd);
-}
-
-.status-pill-running::before {
-  content: "";
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--s-run);
-  animation: dot-blink 1.4s ease-in-out infinite;
-  flex-shrink: 0;
-}
-
-.status-pill-blocked {
-  background: var(--s-blk-bg);
-  color: var(--s-blk);
-  border: 1px solid var(--s-blk-bd);
-}
-
-.status-pill-ready_for_review {
-  background: var(--s-rev-bg);
-  color: var(--s-rev);
-  border: 1px solid var(--s-rev-bd);
-}
-
-.status-pill-paused {
-  background: var(--s-pau-bg);
-  color: var(--s-pau);
-  border: 1px solid var(--s-pau-bd);
-}
-
-.status-pill-invalid {
-  background: var(--s-blk-bg);
-  color: var(--s-blk);
-}
-
 /* ─── Local changes dot ──────────────────────────────────── */
 .local-changes-dot {
   display: inline-block;
@@ -649,16 +575,6 @@ code {
 
 .action-btn:hover:not(:disabled) .action-icon {
   opacity: 1;
-}
-
-/* ─── Description text ───────────────────────────────────── */
-.description-text {
-  display: block;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--fg-3);
-  font-size: 16px;
 }
 
 /* ─── Empty state ────────────────────────────────────────── */

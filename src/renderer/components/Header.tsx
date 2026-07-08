@@ -1,4 +1,4 @@
-import { Command, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import type { AppInfo } from "../../shared/types";
 
 type HeaderProps = {
@@ -16,10 +16,6 @@ const Header = ({ activeCount, appInfo }: HeaderProps) => (
       <span className={appInfo?.localApi.running ? "pill pill-ok" : "pill pill-muted"}>
         <Radio size={14} />
         {appInfo?.localApi.running ? `API ${appInfo.localApi.port}` : "API off"}
-      </span>
-      <span className={appInfo?.shortcutRegistered ? "pill pill-ok" : "pill pill-warn"}>
-        <Command size={14} />
-        {appInfo?.shortcutRegistered ? "Cmd Opt Space" : "No shortcut"}
       </span>
     </div>
   </header>

@@ -41,23 +41,19 @@ const StatusGroup = ({ group, customActions }: StatusGroupProps) => {
         <colgroup>
           <col className="col-branch" />
           <col className="col-title" />
-          <col className="col-status" />
           <col className="col-local-changes" />
           <col className="col-pr" />
           <col className="col-ci" />
           <col className="col-actions" />
-          <col className="col-description" />
         </colgroup>
         <thead>
           <tr>
             <th>Branch</th>
             <th>Title</th>
-            <th>Status</th>
             <th title="Uncommitted files or unpushed commits">Δ</th>
             <th>PR</th>
             <th>CI</th>
             <th>Actions</th>
-            <th>Description</th>
           </tr>
         </thead>
         <tbody>
@@ -67,7 +63,7 @@ const StatusGroup = ({ group, customActions }: StatusGroupProps) => {
               workstream={workstream}
               customActions={customActions}
               isSelected={false}
-              onAction={() => {}}
+              onAction={async () => {}}
             />
           ))}
         </tbody>

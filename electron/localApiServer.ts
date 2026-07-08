@@ -2,8 +2,10 @@ import assert from "node:assert";
 import crypto from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import { parseDashboardFocusRequest } from "../src/shared/dashboardFocus";
 import { removeServerInfo, writeServerInfo } from "../src/shared/serverInfo";
 import { formatValidationError } from "../src/shared/statusSchema";
+import type { DashboardFocusRequest } from "../src/shared/types";
 import { writeStatusFile } from "../src/shared/writeStatusFile";
 
 const maxBodySize = 256 * 1024;
@@ -40,7 +42,10 @@ const readJsonBody = (req: IncomingMessage) =>
     req.on("error", reject);
   });
 
-export const startLocalApiServer = async (onStatusUpdated: () => void) => {
+export const startLocalApiServer = async (
+  onStatusUpdated: () => void,
+  onDashboardFocusRequested: (request: DashboardFocusRequest) => void,
+) => {
   const token = crypto.randomBytes(32).toString("hex");
   const server = createServer(async (req, res) => {
     const url = new URL(req.url ?? "/", "http://127.0.0.1");
@@ -54,7 +59,10 @@ export const startLocalApiServer = async (onStatusUpdated: () => void) => {
       return;
     }
 
-    if (req.method !== "POST" || url.pathname !== "/api/status/update") {
+    if (
+      req.method !== "POST" ||
+      !["/api/status/update", "/api/dashboard/focus"].includes(url.pathname)
+    ) {
       sendJson(res, 404, { ok: false, error: "Not found" });
       return;
     }
@@ -71,10 +79,17 @@ export const startLocalApiServer = async (onStatusUpdated: () => void) => {
 
     try {
       const payload = await readJsonBody(req);
-      const result = await writeStatusFile(payload);
+      if (url.pathname === "/api/status/update") {
+        const result = await writeStatusFile(payload);
 
-      onStatusUpdated();
-      sendJson(res, 200, { ok: true, ...result });
+        onStatusUpdated();
+        sendJson(res, 200, { ok: true, ...result });
+        return;
+      }
+
+      const request = parseDashboardFocusRequest(payload);
+      onDashboardFocusRequested(request);
+      sendJson(res, 200, { ok: true });
     } catch (error) {
       sendJson(res, 400, { ok: false, error: formatValidationError(error) });
     }
