@@ -22,7 +22,32 @@ pnpm install
 pnpm dev
 ```
 
-The app starts as a menu bar app. Click the menu bar icon to toggle the dashboard, or press `Command+Option+Space` to show it.
+The app starts as a menu bar app. Click the menu bar icon to toggle the dashboard.
+
+To show the dashboard and preselect a specific workstream, post to the local API or invoke the launcher bundled inside the installed `.app`. Do not assume `ai-work-status` is on `PATH`.
+
+Using the bundled launcher directly:
+
+```bash
+"/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status" \
+  focus \
+  --repo /path/to/repo \
+  --branch feature-branch
+```
+
+Or call the local API yourself:
+
+```bash
+SERVER_JSON="$HOME/.ai-work-status/server.json"
+PORT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["port"])' "$SERVER_JSON")"
+TOKEN="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["token"])' "$SERVER_JSON")"
+curl -X POST "http://127.0.0.1:$PORT/api/dashboard/focus" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"selectWorkstream":{"repoPath":"/path/to/repo","branch":"feature-branch"}}'
+```
+
+Either approach is suitable for Keyboard Maestro, Hammerspoon, Raycast, Shortcuts, or any other macOS hotkey runner that can execute a shell command.
 
 ## Build
 
@@ -63,6 +88,29 @@ Useful options:
 --nextRecommendedAction <action>
 ```
 
+After packaging, the launcher is available inside the installed app at:
+
+```txt
+/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status
+```
+
+It uses the app's own Electron runtime in Node mode, so it does not depend on `node` being installed separately.
+
+To focus the running dashboard and select the current repo's active branch with the bundled launcher:
+
+```bash
+"/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status" focus --repo .
+```
+
+Override the branch explicitly when needed:
+
+```bash
+"/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status" \
+  focus \
+  --repo /path/to/repo \
+  --branch feature-branch
+```
+
 ## Agent Setup
 
 Share [examples/AGENT_STATUS_INSTRUCTIONS.md](examples/AGENT_STATUS_INSTRUCTIONS.md) with coding agents. Agents should call `ai-work-status update` and should not manually write files under `~/.ai-work-status/`.
@@ -91,6 +139,12 @@ The write endpoint is:
 POST /api/status/update
 ```
 
+The focus endpoint is:
+
+```txt
+POST /api/dashboard/focus
+```
+
 It requires:
 
 ```txt
@@ -98,7 +152,18 @@ Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-The API validates payloads and uses the shared status writer. It does not expose arbitrary shell execution.
+Focus requests accept payloads like:
+
+```json
+{
+  "selectWorkstream": {
+    "repoPath": "/path/to/repo",
+    "branch": "feature-branch"
+  }
+}
+```
+
+The API validates payloads, can raise the dashboard window, and can tell the renderer which workstream to select. It does not expose arbitrary shell execution.
 
 ## VS Code
 

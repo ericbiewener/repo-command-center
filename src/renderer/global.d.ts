@@ -1,5 +1,5 @@
 import type { ResolvedCustomAction } from "../shared/settings";
-import type { AppInfo, Workstream } from "../shared/types";
+import type { AppInfo, DashboardFocusRequest, Workstream } from "../shared/types";
 
 declare global {
   interface Window {
@@ -36,6 +36,7 @@ declare global {
       }) => Promise<{ ok: true } | { ok: false; error: string }>;
       onWorkstreamsUpdated: (callback: () => void) => () => void;
       onDashboardShown: (callback: () => void) => () => void;
+      onFocusRequested: (callback: (request: DashboardFocusRequest) => void) => () => void;
       onDevLog: (callback: (entry: unknown) => void) => () => void;
       refreshPrStatus: () => Promise<{ ok: true }>;
     };

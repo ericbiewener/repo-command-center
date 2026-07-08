@@ -11,14 +11,16 @@ type GroupSectionProps = {
   group: WorkstreamRepoGroup;
   customActions: ResolvedCustomAction[];
   selectedStatusFilePath: string | null;
+  pendingStatusFilePaths: Record<string, boolean>;
   columnCount: number;
-  onAction: () => void;
+  onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
 };
 
 const GroupSection = ({
   group,
   customActions,
   selectedStatusFilePath,
+  pendingStatusFilePaths,
   columnCount,
   onAction,
 }: GroupSectionProps) => {
@@ -60,6 +62,7 @@ const GroupSection = ({
           workstream={workstream}
           customActions={customActions}
           isSelected={workstream.statusFilePath === selectedStatusFilePath}
+          isPending={pendingStatusFilePaths[workstream.statusFilePath] === true}
           onAction={onAction}
         />
       ))}
@@ -71,7 +74,8 @@ type WorkstreamTableProps = {
   groups: WorkstreamRepoGroup[];
   customActions: ResolvedCustomAction[];
   selectedStatusFilePath: string | null;
-  onAction: () => void;
+  pendingStatusFilePaths: Record<string, boolean>;
+  onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
   unified?: boolean;
   sortedWorkstreams?: Workstream[];
 };
@@ -80,12 +84,13 @@ const WorkstreamTable = ({
   groups,
   customActions,
   selectedStatusFilePath,
+  pendingStatusFilePaths,
   onAction,
   unified = false,
   sortedWorkstreams = [],
 }: WorkstreamTableProps) => {
   const hasActions = customActions.length > 0;
-  const columnCount = hasActions ? 8 : 7;
+  const columnCount = hasActions ? 6 : 5;
 
   const mergedWorkstreams = groups
     .flatMap((g) => g.items)
@@ -93,9 +98,8 @@ const WorkstreamTable = ({
 
   const handleDeleteMerged = () => {
     for (const ws of mergedWorkstreams) {
-      void window.appApi.executeDeleteAction(ws.repoPath, ws.branch);
+      void onAction(ws, () => window.appApi.executeDeleteAction(ws.repoPath, ws.branch));
     }
-    onAction();
   };
 
   return (
@@ -105,7 +109,6 @@ const WorkstreamTable = ({
           {unified ? <th>Repo</th> : null}
           <th>Branch</th>
           <th>Title</th>
-          <th>Status</th>
           <th title="Uncommitted files or unpushed commits">Δ</th>
           <th>
             <div className="th-pr-header">
@@ -125,7 +128,6 @@ const WorkstreamTable = ({
           </th>
           <th>CI</th>
           {hasActions ? <th>Actions</th> : null}
-          <th className="col-description">Description</th>
         </tr>
       </thead>
       <tbody>
@@ -136,6 +138,7 @@ const WorkstreamTable = ({
                 workstream={ws}
                 customActions={customActions}
                 isSelected={ws.statusFilePath === selectedStatusFilePath}
+                isPending={pendingStatusFilePaths[ws.statusFilePath] === true}
                 showRepo
                 onAction={onAction}
               />
@@ -146,6 +149,7 @@ const WorkstreamTable = ({
                 group={group}
                 customActions={customActions}
                 selectedStatusFilePath={selectedStatusFilePath}
+                pendingStatusFilePaths={pendingStatusFilePaths}
                 columnCount={columnCount}
                 onAction={onAction}
               />

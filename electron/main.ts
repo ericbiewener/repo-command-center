@@ -1,8 +1,8 @@
 import type { ChildProcess } from "node:child_process";
-import { app, type BrowserWindow, globalShortcut, Notification, type Tray } from "electron";
+import { app, type BrowserWindow, Notification, type Tray } from "electron";
 import { getStatusBaseDir } from "../src/shared/paths";
 import { readSettings } from "../src/shared/settings";
-import type { ServerInfo, Workstream } from "../src/shared/types";
+import type { DashboardFocusRequest, ServerInfo, Workstream } from "../src/shared/types";
 import { initDevLog } from "./devLog";
 import { registerIpc } from "./ipc";
 import { startLocalApiServer } from "./localApiServer";
@@ -12,11 +12,11 @@ import { createDashboardWindow } from "./window";
 
 let dashboardWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
-let shortcutRegistered = false;
 let localApiInfo: ServerInfo | null = null;
 let closeLocalApi: (() => Promise<void>) | null = null;
 let lastBlurHideAt = 0;
 let lastShowAt = 0;
+let pendingFocusRequest: DashboardFocusRequest | null = null;
 
 const isDevelopment = Boolean(process.env.ELECTRON_RENDERER_URL);
 
@@ -37,6 +37,18 @@ const showDashboard = () => {
   dashboardWindow?.focus();
 };
 
+const flushPendingFocusRequest = () => {
+  if (!dashboardWindow || dashboardWindow.isDestroyed() || !pendingFocusRequest) return;
+  dashboardWindow.webContents.send("dashboard:focus-requested", pendingFocusRequest);
+  pendingFocusRequest = null;
+};
+
+const focusDashboard = (request: DashboardFocusRequest = {}) => {
+  pendingFocusRequest = request;
+  showDashboard();
+  dashboardWindow?.webContents.isLoadingMainFrame() ? undefined : flushPendingFocusRequest();
+};
+
 const createAndShowDashboard = () => {
   dashboardWindow = createDashboardWindow({
     onBlurHide: () => {
@@ -55,7 +67,6 @@ const toggleDashboard = () => {
 };
 
 const getAppInfo = () => ({
-  shortcutRegistered,
   statusRoot: getStatusBaseDir(),
   localApi: localApiInfo
     ? {
@@ -99,6 +110,7 @@ app.whenReady().then(async () => {
   });
 
   initDevLog(dashboardWindow.webContents);
+  dashboardWindow.webContents.on("did-finish-load", flushPendingFocusRequest);
 
   // Refresh PR/CI when dashboard is brought to foreground (debounced)
   dashboardWindow.on("focus", debouncedPrRefresh);
@@ -106,12 +118,6 @@ app.whenReady().then(async () => {
   if (!isDock) {
     tray = createTray(toggleDashboard, refreshWorkstreams);
   }
-  shortcutRegistered = globalShortcut.register("CommandOrControl+Alt+Space", showDashboard);
-
-  if (!shortcutRegistered) {
-    console.warn("Could not register global shortcut CommandOrControl+Alt+Space.");
-  }
-
   registerIpc({
     getAppInfo,
     hideWindow: () => dashboardWindow?.hide(),
@@ -159,7 +165,7 @@ app.whenReady().then(async () => {
   const pollIntervalMs = (settings.prPollIntervalSeconds ?? 60) * 1_000;
   const stopPolling = prPoller.startPolling(() => cachedWorkstreams.value, pollIntervalMs);
 
-  await startLocalApiServer(refreshWorkstreams)
+  await startLocalApiServer(refreshWorkstreams, focusDashboard)
     .then((server) => {
       localApiInfo = server.info;
       closeLocalApi = server.close;
@@ -168,8 +174,8 @@ app.whenReady().then(async () => {
       );
       console.log(
         isDevelopment
-          ? "Development mode: dashboard opens automatically. Use the tray icon to toggle it or Command+Option+Space to show it."
-          : "Use the tray icon to toggle the dashboard or Command+Option+Space to show it.",
+          ? "Development mode: dashboard opens automatically. Use the tray icon to toggle it."
+          : "Use the tray icon to toggle the dashboard.",
       );
     })
     .catch((error: unknown) => {
@@ -190,7 +196,6 @@ app.on("before-quit", () => {
 });
 
 app.on("will-quit", () => {
-  globalShortcut.unregisterAll();
   tray?.destroy();
   void closeLocalApi?.();
 });

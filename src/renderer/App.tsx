@@ -1,9 +1,9 @@
-import fuzzysort from "fuzzysort";
-import { Layers, LayoutList, Loader2, Search } from "lucide-react";
+import { Layers, LayoutList, Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { resolveSelectedStatusFilePath } from "../shared/dashboardFocus";
 import type { ResolvedCustomAction } from "../shared/settings";
-import type { AppInfo, Workstream } from "../shared/types";
+import type { AppInfo, DashboardFocusRequest, Workstream } from "../shared/types";
 import EmptyState from "./components/EmptyState";
 import ErrorPanel from "./components/ErrorPanel";
 import WorkstreamTable from "./components/WorkstreamTable";
@@ -41,9 +41,14 @@ const DashboardApp = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
-  const [query, setQuery] = useState("");
   const [unified, setUnified] = useState(() => localStorage.getItem("cc-unified-view") === "true");
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [pendingFocusRequest, setPendingFocusRequest] = useState<DashboardFocusRequest | null>(
+    null,
+  );
+  const [pendingStatusFilePaths, setPendingStatusFilePaths] = useState<Record<string, boolean>>(
+    Object.create(null),
+  );
   const toastIdRef = useRef(0);
   const workstreamsRef = useRef(workstreams);
   workstreamsRef.current = workstreams;
@@ -56,7 +61,6 @@ const DashboardApp = () => {
   }, []);
   // Track selected item by statusFilePath so it survives filter changes gracefully
   const [anchorPath, setAnchorPath] = useState<string | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
@@ -86,23 +90,25 @@ const DashboardApp = () => {
     () =>
       window.appApi.onDevLog((raw) => {
         const entry = raw as DevLogEntry;
-        entry.type === "exec"
-          ? (console.groupCollapsed(`[bash] ${entry.cmd} ${entry.args.join(" ")}`),
-            entry.stdout && console.log("stdout:", entry.stdout),
-            entry.stderr && console.log("stderr:", entry.stderr),
-            console.groupEnd())
-          : entry.type === "exec:error"
-            ? (console.group(`[bash:error] ${entry.cmd} ${entry.args.join(" ")}`),
-              console.error("error:", entry.error),
-              console.groupEnd())
-            : entry.type === "spawn:done"
-              ? (console.group(
-                  `[bash:spawn:done] ${entry.cmd} ${entry.args.join(" ")} (exit ${entry.exitCode})`,
-                ),
-                entry.stdout && console.log("stdout:", entry.stdout),
-                entry.stderr && console.log("stderr:", entry.stderr),
-                console.groupEnd())
-              : console.log(`[bash:spawn] ${entry.cmd} ${entry.args.join(" ")}`);
+        if (entry.type === "exec") {
+          console.groupCollapsed(`[bash] ${entry.cmd} ${entry.args.join(" ")}`);
+          entry.stdout ? console.log("stdout:", entry.stdout) : undefined;
+          entry.stderr ? console.log("stderr:", entry.stderr) : undefined;
+          console.groupEnd();
+        } else if (entry.type === "exec:error") {
+          console.group(`[bash:error] ${entry.cmd} ${entry.args.join(" ")}`);
+          console.error("error:", entry.error);
+          console.groupEnd();
+        } else if (entry.type === "spawn:done") {
+          console.group(
+            `[bash:spawn:done] ${entry.cmd} ${entry.args.join(" ")} (exit ${entry.exitCode})`,
+          );
+          entry.stdout ? console.log("stdout:", entry.stdout) : undefined;
+          entry.stderr ? console.log("stderr:", entry.stderr) : undefined;
+          console.groupEnd();
+        } else {
+          console.log(`[bash:spawn] ${entry.cmd} ${entry.args.join(" ")}`);
+        }
         if (entry.type === "spawn:done") {
           if (entry.stderr) {
             const id = ++toastIdRef.current;
@@ -123,13 +129,26 @@ const DashboardApp = () => {
     });
     const removeShownListener = window.appApi.onDashboardShown(() => {
       void refresh();
-      searchInputRef.current?.focus();
+    });
+    const removeFocusRequestedListener = window.appApi.onFocusRequested((request) => {
+      setPendingFocusRequest(request);
+      void refresh();
     });
     return () => {
       removeUpdatedListener();
       removeShownListener();
+      removeFocusRequestedListener();
     };
   }, [refresh]);
+
+  useEffect(() => {
+    if (!pendingFocusRequest || isLoading) return;
+
+    const selectedStatusFilePath = resolveSelectedStatusFilePath(workstreams, pendingFocusRequest);
+
+    selectedStatusFilePath ? setAnchorPath(selectedStatusFilePath) : undefined;
+    setPendingFocusRequest(null);
+  }, [pendingFocusRequest, isLoading, workstreams]);
 
   const toggleUnified = useCallback(() => {
     setUnified((prev) => {
@@ -139,22 +158,14 @@ const DashboardApp = () => {
     });
   }, []);
 
-  const filteredWorkstreams = useMemo(
-    () =>
-      query.trim()
-        ? fuzzysort.go(query, workstreams, { key: "branch" }).map((r) => r.obj)
-        : workstreams,
-    [workstreams, query],
-  );
-
-  const groups = useMemo(() => groupWorkstreams(filteredWorkstreams), [filteredWorkstreams]);
+  const groups = useMemo(() => groupWorkstreams(workstreams), [workstreams]);
 
   const sortedWorkstreams = useMemo(
     () =>
       unified
-        ? [...filteredWorkstreams].sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0))
+        ? [...workstreams].sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0))
         : [],
-    [filteredWorkstreams, unified],
+    [workstreams, unified],
   );
 
   const flatWorkstreams = useMemo(
@@ -179,6 +190,21 @@ const DashboardApp = () => {
     }
   }, [refresh]);
 
+  const runWorkstreamAction = useCallback(
+    async (workstream: Workstream, action: () => Promise<unknown>) => {
+      if (pendingStatusFilePaths[workstream.statusFilePath] === true) return;
+
+      setPendingStatusFilePaths((prev) => ({ ...prev, [workstream.statusFilePath]: true }));
+      try {
+        await action();
+        refreshFast();
+      } finally {
+        setPendingStatusFilePaths((prev) => ({ ...prev, [workstream.statusFilePath]: false }));
+      }
+    },
+    [pendingStatusFilePaths, refreshFast],
+  );
+
   // Keyboard navigation — arrow keys move selection, Enter triggers action, Cmd+Backspace/Delete triggers deleteAction
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -190,38 +216,50 @@ const DashboardApp = () => {
         event.preventDefault();
         const prevIdx = Math.max(effectiveIndex - 1, 0);
         setAnchorPath(flatWorkstreams[prevIdx]?.statusFilePath ?? null);
-      } else if (event.key === "Enter" && selectedWorkstream) {
-        void window.appApi.executeAction(selectedWorkstream.repoPath, selectedWorkstream.branch);
-        refreshFast();
+      } else if (
+        event.key === "Enter" &&
+        selectedWorkstream &&
+        pendingStatusFilePaths[selectedWorkstream.statusFilePath] !== true
+      ) {
+        void runWorkstreamAction(selectedWorkstream, () =>
+          window.appApi.executeAction(selectedWorkstream.repoPath, selectedWorkstream.branch),
+        );
       } else if (
         event.metaKey &&
         !event.shiftKey &&
         (event.key === "Backspace" || event.key === "Delete") &&
-        selectedWorkstream
+        selectedWorkstream &&
+        pendingStatusFilePaths[selectedWorkstream.statusFilePath] !== true
       ) {
         event.preventDefault();
-        void window.appApi.executeDeleteAction(
-          selectedWorkstream.repoPath,
-          selectedWorkstream.branch,
+        void runWorkstreamAction(selectedWorkstream, () =>
+          window.appApi.executeDeleteAction(selectedWorkstream.repoPath, selectedWorkstream.branch),
         );
-        refreshFast();
       } else if (
         event.metaKey &&
         event.shiftKey &&
         (event.key === "Backspace" || event.key === "Delete") &&
-        selectedWorkstream
+        selectedWorkstream &&
+        pendingStatusFilePaths[selectedWorkstream.statusFilePath] !== true
       ) {
         event.preventDefault();
-        void window.appApi.executeDeleteActionSecondary(
-          selectedWorkstream.repoPath,
-          selectedWorkstream.branch,
+        void runWorkstreamAction(selectedWorkstream, () =>
+          window.appApi.executeDeleteActionSecondary(
+            selectedWorkstream.repoPath,
+            selectedWorkstream.branch,
+          ),
         );
-        refreshFast();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [flatWorkstreams, effectiveIndex, selectedWorkstream, refreshFast]);
+  }, [
+    flatWorkstreams,
+    effectiveIndex,
+    pendingStatusFilePaths,
+    runWorkstreamAction,
+    selectedWorkstream,
+  ]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -249,18 +287,7 @@ const DashboardApp = () => {
   return (
     <>
       <main className="app-shell">
-        <div className="search-wrapper">
-          <Search size={15} className="search-icon" />
-          <input
-            ref={searchInputRef}
-            className="search-input"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search worktrees…"
-            // biome-ignore lint/a11y/noAutofocus: intentional — this is a launcher UI
-            autoFocus
-            spellCheck={false}
-          />
+        <div className="top-toolbar">
           <AnimatePresence>
             {isRefreshing ? (
               <motion.span
@@ -271,7 +298,7 @@ const DashboardApp = () => {
                 transition={{ duration: 0.15 }}
                 style={{ display: "flex", alignItems: "center" }}
               >
-                <Loader2 size={14} className="search-icon spin" />
+                <Loader2 size={14} className="toolbar-icon spin" />
               </motion.span>
             ) : null}
           </AnimatePresence>
@@ -295,7 +322,8 @@ const DashboardApp = () => {
               groups={groups}
               customActions={customActions}
               selectedStatusFilePath={selectedWorkstream?.statusFilePath ?? null}
-              onAction={refreshFast}
+              pendingStatusFilePaths={pendingStatusFilePaths}
+              onAction={runWorkstreamAction}
               unified={unified}
               sortedWorkstreams={sortedWorkstreams}
             />

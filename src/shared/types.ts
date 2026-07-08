@@ -77,6 +77,17 @@ export type Workstream = {
   prInfo: PrInfo | null;
 };
 
+export type WorkstreamSelectionRequest = {
+  statusFilePath?: string;
+  workstreamId?: string;
+  repoPath?: string;
+  branch?: string;
+};
+
+export type DashboardFocusRequest = {
+  selectWorkstream?: WorkstreamSelectionRequest;
+};
+
 export type ServerInfo = {
   port: number;
   token: string;
@@ -85,7 +96,6 @@ export type ServerInfo = {
 };
 
 export type AppInfo = {
-  shortcutRegistered: boolean;
   statusRoot: string;
   localApi: {
     running: boolean;

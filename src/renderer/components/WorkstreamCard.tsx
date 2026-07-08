@@ -1,6 +1,5 @@
 import { AlertCircle, FileWarning, GitMerge, GitPullRequest } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
 import type { ResolvedCustomAction } from "../../shared/settings";
 import type { Workstream } from "../../shared/types";
 
@@ -9,7 +8,8 @@ type WorkstreamCardProps = {
   customActions: ResolvedCustomAction[];
   isSelected: boolean;
   showRepo?: boolean;
-  onAction: () => void;
+  isPending?: boolean;
+  onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
 };
 
 const CI_COLORS: Record<string, string> = {
@@ -24,33 +24,26 @@ const WorkstreamCard = ({
   customActions,
   isSelected,
   showRepo = false,
+  isPending = false,
   onAction,
 }: WorkstreamCardProps) => {
-  const [executingActions, setExecutingActions] = useState<Record<number, boolean>>(
-    Object.create(null),
-  );
-
   const { gitStatus, prInfo } = workstream;
   const hasPr = prInfo !== null && !("fetchError" in prInfo);
   const prFetchError = prInfo !== null && "fetchError" in prInfo;
-
-  const handleCustomAction = async (index: number) => {
-    setExecutingActions((prev) => ({ ...prev, [index]: true }));
-    await window.appApi.executeCustomAction(index, workstream.repoPath, workstream.branch);
-    setExecutingActions((prev) => ({ ...prev, [index]: false }));
-    onAction();
-  };
 
   return (
     <motion.tr
       className={`workstream-row status-row-${workstream.status}${isSelected ? " selected" : ""}`}
       data-selected={isSelected ? "true" : undefined}
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{ opacity: isPending ? 0.7 : 1 }}
       transition={{ duration: 0.2 }}
       onClick={() => {
-        void window.appApi.executeAction(workstream.repoPath, workstream.branch);
-        onAction();
+        isPending
+          ? undefined
+          : void onAction(workstream, () =>
+              window.appApi.executeAction(workstream.repoPath, workstream.branch),
+            );
       }}
     >
       {showRepo ? (
@@ -68,12 +61,6 @@ const WorkstreamCard = ({
       </td>
 
       <td className="col-title">{workstream.title ?? null}</td>
-
-      <td className="col-status">
-        <span className={`status-pill status-pill-${workstream.status}`}>
-          {workstream.rawStatus || workstream.status}
-        </span>
-      </td>
 
       <td className="col-local-changes">
         {gitStatus !== null &&
@@ -137,10 +124,18 @@ const WorkstreamCard = ({
                 title={action.title}
                 className="action-btn"
                 style={action.background ? { background: action.background } : undefined}
-                disabled={executingActions[i] === true}
+                disabled={isPending}
                 onClick={(e) => {
                   e.stopPropagation();
-                  void handleCustomAction(i);
+                  isPending
+                    ? undefined
+                    : void onAction(workstream, () =>
+                        window.appApi.executeCustomAction(
+                          i,
+                          workstream.repoPath,
+                          workstream.branch,
+                        ),
+                      );
                 }}
               >
                 {action.iconDataUri ? (
@@ -153,13 +148,6 @@ const WorkstreamCard = ({
           </div>
         </td>
       ) : null}
-      <td className="col-description">
-        {workstream.summary ? (
-          <span className="description-text" title={workstream.summary}>
-            {workstream.summary}
-          </span>
-        ) : null}
-      </td>
     </motion.tr>
   );
 };
