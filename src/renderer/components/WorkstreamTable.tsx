@@ -108,8 +108,6 @@ const WorkstreamTable = ({
         <tr>
           {unified ? <th>Repo</th> : null}
           <th>Branch</th>
-          <th>Title</th>
-          <th title="Uncommitted files or unpushed commits">Δ</th>
           <th>
             <div className="th-pr-header">
               PR
@@ -127,7 +125,9 @@ const WorkstreamTable = ({
             </div>
           </th>
           <th>CI</th>
+          <th title="Uncommitted files or unpushed commits">Δ</th>
           {hasActions ? <th>Actions</th> : null}
+          <th className="spacer" />
         </tr>
       </thead>
       <tbody>

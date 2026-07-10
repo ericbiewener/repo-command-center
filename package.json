@@ -54,6 +54,7 @@
     "*.{css,json,md,ts,tsx}": "biome check --write --no-errors-on-unmatched"
   },
   "dependencies": {
+    "fuzzysort": "^3.1.0",
     "motion": "^12.40.0"
   },
   "devDependencies": {

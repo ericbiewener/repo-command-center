@@ -9,11 +9,25 @@ import type {
 import { groupWorkstreams } from "../renderer/utils/groupWorkstreams";
 import { listWorkstreams } from "../shared/readStatusFiles";
 import type { Workstream } from "../shared/types";
-
-const deleteArg = process.argv[2];
-assert(deleteArg, "Usage: delete-workstream <path-or-branch>");
+import { yargsInit } from "./yargs";
 
 type BranchRow = { group: WorkstreamRepoGroup; branch: WorkstreamBranchGroup };
+
+const { repoPath, repo, branch } = yargsInit({
+  repoPath: {
+    type: "string",
+    description: "Repo directory path — deletes all workstreams for this repo",
+  },
+  repo: { type: "string", description: "Repo directory path (use with --branch)" },
+  branch: { type: "string", description: "Branch name (use with --repo)" },
+})
+  .check((argv) => {
+    if (argv.repoPath) return true;
+    if (argv.repo && argv.branch) return true;
+    throw new Error("Provide either --repoPath or both --repo and --branch");
+  })
+  .strictOptions()
+  .parseSync();
 
 const deleteWorkstreamFiles = async (items: Workstream[]) => {
   await Promise.all(items.map((w) => fs.unlink(w.statusFilePath)));
@@ -31,40 +45,33 @@ const deleteWorkstreamFiles = async (items: Workstream[]) => {
 const allWorkstreams = await listWorkstreams();
 const groups = groupWorkstreams(allWorkstreams);
 
-const resolvedArg = path.resolve(deleteArg);
-const isDir = await fs
-  .stat(resolvedArg)
-  .then((s) => s.isDirectory())
-  .catch(() => false);
-
 let rows: BranchRow[];
-if (isDir) {
+if (repoPath) {
+  const resolved = path.resolve(repoPath);
   rows = groups.flatMap((group) =>
     group.branches
-      .filter((b) => b.items.some((w) => path.resolve(w.repoPath) === resolvedArg))
-      .map((branch) => ({ group, branch })),
+      .filter((b) => b.items.some((w) => path.resolve(w.repoPath) === resolved))
+      .map((b) => ({ group, branch: b })),
   );
 } else {
+  assert(repo && branch);
+  const resolvedRepo = path.resolve(repo);
   rows = groups.flatMap((group) =>
-    group.branches.filter((b) => b.branch === deleteArg).map((branch) => ({ group, branch })),
+    group.branches
+      .filter(
+        (b) =>
+          b.branch === branch && b.items.some((w) => path.resolve(w.repoPath) === resolvedRepo),
+      )
+      .map((b) => ({ group, branch: b })),
   );
 }
 
 if (rows.length === 0) {
-  process.stderr.write(`No workstreams found matching: ${deleteArg}\n`);
+  const descriptor = repoPath ? `repoPath: ${repoPath}` : `repo: ${repo}, branch: ${branch}`;
+  process.stderr.write(`No workstreams found matching ${descriptor}\n`);
   process.exit(1);
 }
 
-if (rows.length > 1) {
-  process.stderr.write(
-    `Multiple workstreams match "${deleteArg}":\n${rows
-      .map((r) => `  ${r.group.repoName} / ${r.branch.branch}`)
-      .join("\n")}\n`,
-  );
-  process.exit(1);
-}
-
-const row = rows[0];
-assert(row);
-await deleteWorkstreamFiles(row.branch.items);
-process.stdout.write(`Deleted ${row.group.repoName} / ${row.branch.branch}\n`);
+await Promise.all(rows.map((row) => deleteWorkstreamFiles(row.branch.items)));
+const deleted = rows.map((r) => `${r.group.repoName} / ${r.branch.branch}`).join(", ");
+process.stdout.write(`Deleted ${deleted}\n`);

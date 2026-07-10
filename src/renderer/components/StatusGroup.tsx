@@ -50,10 +50,11 @@ const StatusGroup = ({ group, customActions }: StatusGroupProps) => {
           <tr>
             <th>Branch</th>
             <th>Title</th>
-            <th title="Uncommitted files or unpushed commits">Δ</th>
             <th>PR</th>
             <th>CI</th>
+            <th title="Uncommitted files or unpushed commits">Δ</th>
             <th>Actions</th>
+            <th className="spacer" />
           </tr>
         </thead>
         <tbody>
