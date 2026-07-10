@@ -1,4 +1,4 @@
-import { Layers, LayoutList, Loader2 } from "lucide-react";
+import { Layers, LayoutList, Loader2, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveSelectedStatusFilePath } from "../shared/dashboardFocus";
@@ -7,6 +7,7 @@ import type { AppInfo, DashboardFocusRequest, Workstream } from "../shared/types
 import EmptyState from "./components/EmptyState";
 import ErrorPanel from "./components/ErrorPanel";
 import WorkstreamTable from "./components/WorkstreamTable";
+import { filterWorkstreams } from "./utils/filterWorkstreams";
 import { groupWorkstreams } from "./utils/groupWorkstreams";
 
 type DevLogEntry =
@@ -42,6 +43,7 @@ const DashboardApp = () => {
   const [error, setError] = useState<string | null>(null);
   const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
   const [unified, setUnified] = useState(() => localStorage.getItem("cc-unified-view") === "true");
+  const [query, setQuery] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [pendingFocusRequest, setPendingFocusRequest] = useState<DashboardFocusRequest | null>(
     null,
@@ -51,6 +53,7 @@ const DashboardApp = () => {
   );
   const toastIdRef = useRef(0);
   const workstreamsRef = useRef(workstreams);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   workstreamsRef.current = workstreams;
 
   const refreshFast = useCallback(() => {
@@ -129,6 +132,7 @@ const DashboardApp = () => {
     });
     const removeShownListener = window.appApi.onDashboardShown(() => {
       void refresh();
+      searchInputRef.current?.focus();
     });
     const removeFocusRequestedListener = window.appApi.onFocusRequested((request) => {
       setPendingFocusRequest(request);
@@ -158,14 +162,19 @@ const DashboardApp = () => {
     });
   }, []);
 
-  const groups = useMemo(() => groupWorkstreams(workstreams), [workstreams]);
+  const filteredWorkstreams = useMemo(
+    () => filterWorkstreams(workstreams, query),
+    [workstreams, query],
+  );
+
+  const groups = useMemo(() => groupWorkstreams(filteredWorkstreams), [filteredWorkstreams]);
 
   const sortedWorkstreams = useMemo(
     () =>
       unified
-        ? [...workstreams].sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0))
+        ? [...filteredWorkstreams].sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0))
         : [],
-    [workstreams, unified],
+    [filteredWorkstreams, unified],
   );
 
   const flatWorkstreams = useMemo(
@@ -288,6 +297,19 @@ const DashboardApp = () => {
     <>
       <main className="app-shell">
         <div className="top-toolbar">
+          <div className="search-wrapper">
+            <Search size={15} className="search-icon" />
+            <input
+              ref={searchInputRef}
+              className="search-input"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search worktrees…"
+              // biome-ignore lint/a11y/noAutofocus: intentional launcher behavior
+              autoFocus
+              spellCheck={false}
+            />
+          </div>
           <AnimatePresence>
             {isRefreshing ? (
               <motion.span
@@ -314,8 +336,13 @@ const DashboardApp = () => {
         </div>
         <ErrorPanel message={error} invalidWorkstreams={invalidWorkstreams} />
 
-        {!isLoading && groups.length === 0 ? (
+        {!isLoading && workstreams.length === 0 ? (
           <EmptyState statusRoot={appInfo?.statusRoot ?? "~/.ai-work-status"} />
+        ) : !isLoading && filteredWorkstreams.length === 0 ? (
+          <section className="empty-state search-empty-state">
+            <h2>No matching workstreams.</h2>
+            <p>Try a different branch query.</p>
+          </section>
         ) : (
           <div className="groups">
             <WorkstreamTable

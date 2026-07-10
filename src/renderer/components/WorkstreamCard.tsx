@@ -60,28 +60,6 @@ const WorkstreamCard = ({
         ) : null}
       </td>
 
-      <td className="col-title">{workstream.title ?? null}</td>
-
-      <td className="col-local-changes">
-        {gitStatus !== null &&
-        (gitStatus.uncommittedCount > 0 ||
-          (gitStatus.unpushedCount !== null && gitStatus.unpushedCount > 0)) ? (
-          <span
-            role="img"
-            className="local-changes-dot"
-            aria-label="Has local changes"
-            title={[
-              gitStatus.uncommittedCount > 0 ? `${gitStatus.uncommittedCount} uncommitted` : null,
-              gitStatus.unpushedCount !== null && gitStatus.unpushedCount > 0
-                ? `${gitStatus.unpushedCount} unpushed`
-                : null,
-            ]
-              .filter(Boolean)
-              .join(", ")}
-          />
-        ) : null}
-      </td>
-
       <td className="col-pr">
         {prFetchError ? (
           <span className="pr-fetch-error" title="PR fetch failed">
@@ -107,9 +85,31 @@ const WorkstreamCard = ({
           <span
             role="img"
             className="ci-dot"
-            style={{ background: CI_COLORS[prInfo.ciStatus] ?? CI_COLORS.error }}
+            style={{
+              background: CI_COLORS[prInfo.ciStatus] ?? CI_COLORS.error,
+            }}
             aria-label={`CI: ${prInfo.ciStatus}`}
             title={`CI: ${prInfo.ciStatus}`}
+          />
+        ) : null}
+      </td>
+
+      <td className="col-local-changes">
+        {gitStatus !== null &&
+        (gitStatus.uncommittedCount > 0 ||
+          (gitStatus.unpushedCount !== null && gitStatus.unpushedCount > 0)) ? (
+          <span
+            role="img"
+            className="local-changes-dot"
+            aria-label="Has local changes"
+            title={[
+              gitStatus.uncommittedCount > 0 ? `${gitStatus.uncommittedCount} uncommitted` : null,
+              gitStatus.unpushedCount !== null && gitStatus.unpushedCount > 0
+                ? `${gitStatus.unpushedCount} unpushed`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(", ")}
           />
         ) : null}
       </td>
@@ -148,6 +148,8 @@ const WorkstreamCard = ({
           </div>
         </td>
       ) : null}
+
+      <td className="spacer" />
     </motion.tr>
   );
 };
