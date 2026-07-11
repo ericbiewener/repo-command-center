@@ -596,28 +596,57 @@ code {
   background: var(--ci-err);
 }
 
-/* ─── Actions column ─────────────────────────────────────── */
-.actions-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* ─── Action bar (selected row) ──────────────────────────── */
+.action-bar-row {
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--b-dim);
 }
 
-.action-btn {
+.action-bar-cell {
+  border-left: 3px solid var(--accent);
+  padding: 5px 18px 8px;
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.action-bar-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
   min-height: unset;
-  height: 36px;
-  padding: 0 9px;
+  height: auto;
+  padding: 5px 10px;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 14px;
+}
+
+.action-key {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--fg-3);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.action-btn-title {
+  font-size: 13px;
+  color: var(--fg-2);
 }
 
 .action-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   opacity: 0.7;
 }
 
-.action-btn:hover:not(:disabled) .action-icon {
+.action-bar-btn:hover:not(:disabled) .action-icon {
   opacity: 1;
 }
 

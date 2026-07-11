@@ -12,8 +12,8 @@ type GroupSectionProps = {
   customActions: ResolvedCustomAction[];
   selectedStatusFilePath: string | null;
   pendingStatusFilePaths: Record<string, boolean>;
-  columnCount: number;
   onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
+  onSelect: (workstream: Workstream) => void;
 };
 
 const GroupSection = ({
@@ -21,8 +21,8 @@ const GroupSection = ({
   customActions,
   selectedStatusFilePath,
   pendingStatusFilePaths,
-  columnCount,
   onAction,
+  onSelect,
 }: GroupSectionProps) => {
   const [showModal, setShowModal] = useState(false);
   const repoPath = group.items[0]?.repoPath ?? "";
@@ -30,7 +30,7 @@ const GroupSection = ({
   return (
     <>
       <tr className="repo-header-row" id={`repo-section-${group.repoKey}`}>
-        <td colSpan={columnCount} className="repo-header-cell">
+        <td colSpan={5} className="repo-header-cell">
           <div className="repo-heading">
             <h2>{group.repoName}</h2>
             {repoPath ? (
@@ -64,6 +64,7 @@ const GroupSection = ({
           isSelected={workstream.statusFilePath === selectedStatusFilePath}
           isPending={pendingStatusFilePaths[workstream.statusFilePath] === true}
           onAction={onAction}
+          onSelect={onSelect}
         />
       ))}
     </>
@@ -76,6 +77,7 @@ type WorkstreamTableProps = {
   selectedStatusFilePath: string | null;
   pendingStatusFilePaths: Record<string, boolean>;
   onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
+  onSelect: (workstream: Workstream) => void;
   unified?: boolean;
   sortedWorkstreams?: Workstream[];
 };
@@ -86,12 +88,10 @@ const WorkstreamTable = ({
   selectedStatusFilePath,
   pendingStatusFilePaths,
   onAction,
+  onSelect,
   unified = false,
   sortedWorkstreams = [],
 }: WorkstreamTableProps) => {
-  const hasActions = customActions.length > 0;
-  const columnCount = hasActions ? 6 : 5;
-
   const mergedWorkstreams = groups
     .flatMap((g) => g.items)
     .filter((ws) => ws.prInfo !== null && !("fetchError" in ws.prInfo) && ws.prInfo.merged);
@@ -126,7 +126,6 @@ const WorkstreamTable = ({
           </th>
           <th>CI</th>
           <th title="Uncommitted files or unpushed commits">Δ</th>
-          {hasActions ? <th>Actions</th> : null}
           <th className="spacer" />
         </tr>
       </thead>
@@ -141,6 +140,7 @@ const WorkstreamTable = ({
                 isPending={pendingStatusFilePaths[ws.statusFilePath] === true}
                 showRepo
                 onAction={onAction}
+                onSelect={onSelect}
               />
             ))
           : groups.map((group) => (
@@ -150,8 +150,8 @@ const WorkstreamTable = ({
                 customActions={customActions}
                 selectedStatusFilePath={selectedStatusFilePath}
                 pendingStatusFilePaths={pendingStatusFilePaths}
-                columnCount={columnCount}
                 onAction={onAction}
+                onSelect={onSelect}
               />
             ))}
       </tbody>
