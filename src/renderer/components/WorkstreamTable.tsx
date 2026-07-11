@@ -12,8 +12,10 @@ type GroupSectionProps = {
   customActions: ResolvedCustomAction[];
   selectedStatusFilePath: string | null;
   pendingStatusFilePaths: Record<string, boolean>;
+  hiddenPaths: Record<string, boolean>;
   onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
   onSelect: (workstream: Workstream) => void;
+  onHide: (workstream: Workstream) => void;
 };
 
 const GroupSection = ({
@@ -21,8 +23,10 @@ const GroupSection = ({
   customActions,
   selectedStatusFilePath,
   pendingStatusFilePaths,
+  hiddenPaths,
   onAction,
   onSelect,
+  onHide,
 }: GroupSectionProps) => {
   const [showModal, setShowModal] = useState(false);
   const repoPath = group.items[0]?.repoPath ?? "";
@@ -62,9 +66,11 @@ const GroupSection = ({
           workstream={workstream}
           customActions={customActions}
           isSelected={workstream.statusFilePath === selectedStatusFilePath}
+          isHidden={Boolean(hiddenPaths[workstream.statusFilePath])}
           isPending={pendingStatusFilePaths[workstream.statusFilePath] === true}
           onAction={onAction}
           onSelect={onSelect}
+          onHide={onHide}
         />
       ))}
     </>
@@ -76,8 +82,10 @@ type WorkstreamTableProps = {
   customActions: ResolvedCustomAction[];
   selectedStatusFilePath: string | null;
   pendingStatusFilePaths: Record<string, boolean>;
+  hiddenPaths: Record<string, boolean>;
   onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
   onSelect: (workstream: Workstream) => void;
+  onHide: (workstream: Workstream) => void;
   unified?: boolean;
   sortedWorkstreams?: Workstream[];
 };
@@ -87,8 +95,10 @@ const WorkstreamTable = ({
   customActions,
   selectedStatusFilePath,
   pendingStatusFilePaths,
+  hiddenPaths,
   onAction,
   onSelect,
+  onHide,
   unified = false,
   sortedWorkstreams = [],
 }: WorkstreamTableProps) => {
@@ -137,10 +147,12 @@ const WorkstreamTable = ({
                 workstream={ws}
                 customActions={customActions}
                 isSelected={ws.statusFilePath === selectedStatusFilePath}
+                isHidden={Boolean(hiddenPaths[ws.statusFilePath])}
                 isPending={pendingStatusFilePaths[ws.statusFilePath] === true}
                 showRepo
                 onAction={onAction}
                 onSelect={onSelect}
+                onHide={onHide}
               />
             ))
           : groups.map((group) => (
@@ -150,8 +162,10 @@ const WorkstreamTable = ({
                 customActions={customActions}
                 selectedStatusFilePath={selectedStatusFilePath}
                 pendingStatusFilePaths={pendingStatusFilePaths}
+                hiddenPaths={hiddenPaths}
                 onAction={onAction}
                 onSelect={onSelect}
+                onHide={onHide}
               />
             ))}
       </tbody>

@@ -1,4 +1,4 @@
-import { Layers, LayoutList, Loader2, Search } from "lucide-react";
+import { Eye, EyeOff, Layers, LayoutList, Loader2, Search } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveSelectedStatusFilePath } from "../shared/dashboardFocus";
@@ -43,6 +43,17 @@ const DashboardApp = () => {
   const [error, setError] = useState<string | null>(null);
   const [customActions, setCustomActions] = useState<ResolvedCustomAction[]>([]);
   const [unified, setUnified] = useState(() => localStorage.getItem("cc-unified-view") === "true");
+  const [hiddenPaths, setHiddenPaths] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = localStorage.getItem("cc-hidden-paths");
+      return stored
+        ? Object.fromEntries((JSON.parse(stored) as string[]).map((p) => [p, true as boolean]))
+        : {};
+    } catch {
+      return {};
+    }
+  });
+  const [showHidden, setShowHidden] = useState(false);
   const [query, setQuery] = useState("");
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [pendingFocusRequest, setPendingFocusRequest] = useState<DashboardFocusRequest | null>(
@@ -162,9 +173,24 @@ const DashboardApp = () => {
     });
   }, []);
 
+  const handleHide = useCallback((workstream: Workstream) => {
+    setHiddenPaths((prev) => {
+      const next = prev[workstream.statusFilePath]
+        ? Object.fromEntries(Object.entries(prev).filter(([k]) => k !== workstream.statusFilePath))
+        : { ...prev, [workstream.statusFilePath]: true };
+      localStorage.setItem("cc-hidden-paths", JSON.stringify(Object.keys(next)));
+      return next;
+    });
+  }, []);
+
+  const toggleShowHidden = useCallback(() => setShowHidden((v) => !v), []);
+
   const filteredWorkstreams = useMemo(
-    () => filterWorkstreams(workstreams, query),
-    [workstreams, query],
+    () =>
+      filterWorkstreams(workstreams, query).filter(
+        (w) => showHidden || !hiddenPaths[w.statusFilePath],
+      ),
+    [workstreams, query, showHidden, hiddenPaths],
   );
 
   const groups = useMemo(() => groupWorkstreams(filteredWorkstreams), [filteredWorkstreams]);
@@ -348,15 +374,34 @@ const DashboardApp = () => {
               </motion.span>
             ) : null}
           </AnimatePresence>
-          <button
-            type="button"
-            className="view-toggle-btn"
-            title={unified ? "Switch to grouped view" : "Switch to flat view"}
-            aria-label={unified ? "Switch to grouped view" : "Switch to flat view"}
-            onClick={toggleUnified}
-          >
-            {unified ? <Layers size={15} /> : <LayoutList size={15} />}
-          </button>
+          <div className="toolbar-right">
+            {Object.keys(hiddenPaths).length > 0 ? (
+              <button
+                type="button"
+                className="view-toggle-btn"
+                title={
+                  showHidden ? "Hide hidden rows" : `Show ${Object.keys(hiddenPaths).length} hidden`
+                }
+                aria-label={
+                  showHidden
+                    ? "Hide hidden rows"
+                    : `Show ${Object.keys(hiddenPaths).length} hidden rows`
+                }
+                onClick={toggleShowHidden}
+              >
+                {showHidden ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="view-toggle-btn"
+              title={unified ? "Switch to grouped view" : "Switch to flat view"}
+              aria-label={unified ? "Switch to grouped view" : "Switch to flat view"}
+              onClick={toggleUnified}
+            >
+              {unified ? <Layers size={15} /> : <LayoutList size={15} />}
+            </button>
+          </div>
         </div>
         <ErrorPanel message={error} invalidWorkstreams={invalidWorkstreams} />
 
@@ -374,8 +419,10 @@ const DashboardApp = () => {
               customActions={customActions}
               selectedStatusFilePath={selectedWorkstream?.statusFilePath ?? null}
               pendingStatusFilePaths={pendingStatusFilePaths}
+              hiddenPaths={hiddenPaths}
               onAction={runWorkstreamAction}
               onSelect={handleSelect}
+              onHide={handleHide}
               unified={unified}
               sortedWorkstreams={sortedWorkstreams}
             />

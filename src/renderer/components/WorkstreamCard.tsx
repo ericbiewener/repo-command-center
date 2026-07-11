@@ -1,6 +1,8 @@
 import {
   AlertCircle,
   CornerDownLeft,
+  Eye,
+  EyeOff,
   FileWarning,
   GitMerge,
   GitPullRequest,
@@ -14,10 +16,12 @@ type WorkstreamCardProps = {
   workstream: Workstream;
   customActions: ResolvedCustomAction[];
   isSelected: boolean;
+  isHidden?: boolean;
   showRepo?: boolean;
   isPending?: boolean;
   onAction: (workstream: Workstream, action: () => Promise<unknown>) => Promise<void>;
   onSelect: (workstream: Workstream) => void;
+  onHide: (workstream: Workstream) => void;
 };
 
 const CI_COLORS: Record<string, string> = {
@@ -31,10 +35,12 @@ const WorkstreamCard = ({
   workstream,
   customActions,
   isSelected,
+  isHidden = false,
   showRepo = false,
   isPending = false,
   onAction,
   onSelect,
+  onHide,
 }: WorkstreamCardProps) => {
   const { gitStatus, prInfo } = workstream;
   const hasPr = prInfo !== null && !("fetchError" in prInfo);
@@ -47,7 +53,7 @@ const WorkstreamCard = ({
         className={`workstream-row status-row-${workstream.status}${isSelected ? " selected" : ""}`}
         data-selected={isSelected ? "true" : undefined}
         initial={{ opacity: 0 }}
-        animate={{ opacity: isPending ? 0.7 : 1 }}
+        animate={{ opacity: isPending ? 0.7 : isHidden ? 0.38 : 1 }}
         transition={{ duration: 0.2 }}
         onClick={() => onSelect(workstream)}
       >
@@ -156,6 +162,16 @@ const WorkstreamCard = ({
               >
                 <Trash2 size={13} />
                 <span className="action-key">⌘⌫</span>
+              </button>
+              <button
+                type="button"
+                className="action-bar-btn"
+                title={isHidden ? "Unhide" : "Hide"}
+                disabled={isPending}
+                onClick={() => onHide(workstream)}
+              >
+                {isHidden ? <Eye size={13} /> : <EyeOff size={13} />}
+                <span className="action-key">{isHidden ? "Show" : "Hide"}</span>
               </button>
               {customActions.map((action, i) => (
                 <button

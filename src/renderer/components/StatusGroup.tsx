@@ -66,6 +66,7 @@ const StatusGroup = ({ group, customActions }: StatusGroupProps) => {
               isSelected={false}
               onAction={async () => {}}
               onSelect={() => {}}
+              onHide={() => {}}
             />
           ))}
         </tbody>

@@ -248,6 +248,14 @@ code {
   flex-shrink: 0;
 }
 
+/* ─── Toolbar right group ────────────────────────────────── */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
 /* ─── View toggle button ─────────────────────────────────── */
 .view-toggle-btn {
   min-height: unset;
