@@ -248,6 +248,14 @@ code {
   flex-shrink: 0;
 }
 
+/* ─── Toolbar right group ────────────────────────────────── */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
 /* ─── View toggle button ─────────────────────────────────── */
 .view-toggle-btn {
   min-height: unset;
@@ -596,15 +604,10 @@ code {
   background: var(--ci-err);
 }
 
-/* ─── Action bar (selected row) ──────────────────────────── */
-.action-bar-row {
-  background: var(--bg-raised);
-  border-bottom: 1px solid var(--b-dim);
-}
-
-.action-bar-cell {
-  border-left: 3px solid var(--accent);
-  padding: 5px 18px 8px;
+/* ─── Action bar (selected row inline column) ────────────── */
+.col-actions {
+  padding: 0 8px;
+  vertical-align: middle;
 }
 
 .action-bar {
