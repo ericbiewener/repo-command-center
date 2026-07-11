@@ -56,6 +56,7 @@ const WorkstreamCard = ({
         animate={{ opacity: isPending ? 0.7 : isHidden ? 0.38 : 1 }}
         transition={{ duration: 0.2 }}
         onClick={() => onSelect(workstream)}
+        onMouseEnter={() => onSelect(workstream)}
       >
         {showRepo ? (
           <td className="col-repo">
