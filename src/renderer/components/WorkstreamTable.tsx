@@ -34,7 +34,7 @@ const GroupSection = ({
   return (
     <>
       <tr className="repo-header-row" id={`repo-section-${group.repoKey}`}>
-        <td colSpan={5} className="repo-header-cell">
+        <td colSpan={6} className="repo-header-cell">
           <div className="repo-heading">
             <h2>{group.repoName}</h2>
             {repoPath ? (
@@ -136,6 +136,7 @@ const WorkstreamTable = ({
           </th>
           <th>CI</th>
           <th title="Uncommitted files or unpushed commits">Δ</th>
+          <th className="col-actions" />
           <th className="spacer" />
         </tr>
       </thead>
