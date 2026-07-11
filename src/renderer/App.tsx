@@ -214,7 +214,12 @@ const DashboardApp = () => {
     [pendingStatusFilePaths, refreshFast],
   );
 
-  // Keyboard navigation — arrow keys move selection, Enter triggers action, Cmd+Backspace/Delete triggers deleteAction
+  const handleSelect = useCallback(
+    (workstream: Workstream) => setAnchorPath(workstream.statusFilePath),
+    [],
+  );
+
+  // Keyboard navigation — arrow keys move selection, Enter triggers default action, ⌘1 triggers deleteAction, ⌘2..9 trigger customActions
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (event.key === "ArrowDown") {
@@ -246,6 +251,24 @@ const DashboardApp = () => {
         );
       } else if (
         event.metaKey &&
+        !event.shiftKey &&
+        /^[1-9]$/.test(event.key) &&
+        selectedWorkstream &&
+        pendingStatusFilePaths[selectedWorkstream.statusFilePath] !== true
+      ) {
+        const actionIndex = parseInt(event.key, 10) - 1;
+        if (customActions[actionIndex] !== undefined) {
+          event.preventDefault();
+          void runWorkstreamAction(selectedWorkstream, () =>
+            window.appApi.executeCustomAction(
+              actionIndex,
+              selectedWorkstream.repoPath,
+              selectedWorkstream.branch,
+            ),
+          );
+        }
+      } else if (
+        event.metaKey &&
         event.shiftKey &&
         (event.key === "Backspace" || event.key === "Delete") &&
         selectedWorkstream &&
@@ -268,6 +291,7 @@ const DashboardApp = () => {
     pendingStatusFilePaths,
     runWorkstreamAction,
     selectedWorkstream,
+    customActions,
   ]);
 
   useEffect(() => {
@@ -351,6 +375,7 @@ const DashboardApp = () => {
               selectedStatusFilePath={selectedWorkstream?.statusFilePath ?? null}
               pendingStatusFilePaths={pendingStatusFilePaths}
               onAction={runWorkstreamAction}
+              onSelect={handleSelect}
               unified={unified}
               sortedWorkstreams={sortedWorkstreams}
             />
