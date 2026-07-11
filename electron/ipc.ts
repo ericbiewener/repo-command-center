@@ -79,10 +79,13 @@ export const registerIpc = (options: IpcOptions) => {
       const action = (settings.customActions ?? [])[actionIndex];
       if (!action) return { ok: false as const, error: "Action not found." };
 
-      const expandedCmd = expandEnv(action.command).trim();
+      const expandedCmd = expandEnv(action.command)
+        .replaceAll("$1", repoPath)
+        .replaceAll("$2", branch)
+        .trim();
       if (!expandedCmd) return { ok: false as const, error: "Empty command." };
 
-      const child = loggedSpawn("sh", ["-c", `${expandedCmd} "$@"`, "--", repoPath, branch]);
+      const child = loggedSpawn("sh", ["-c", expandedCmd]);
       child.unref();
       return { ok: true as const };
     },

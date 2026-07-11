@@ -1,4 +1,5 @@
 import type { ChildProcess } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { app, type BrowserWindow, Notification, type Tray } from "electron";
 import { getStatusBaseDir } from "../src/shared/paths";
 import { readSettings } from "../src/shared/settings";
@@ -89,6 +90,21 @@ const debouncedPrRefresh = () => {
     void prPoller.fetchAll(cachedWorkstreams.value);
   }, 2_000);
 };
+
+// On macOS, GUI apps launched from the Dock inherit a minimal PATH that excludes
+// Homebrew and other user-configured directories. Source the login shell PATH once.
+if (process.platform === "darwin") {
+  try {
+    const shell = process.env.SHELL ?? "/bin/zsh";
+    const loginPath = execFileSync(shell, ["-l", "-c", "echo $PATH"], {
+      encoding: "utf8",
+      timeout: 3000,
+    }).trim();
+    if (loginPath) process.env.PATH = loginPath;
+  } catch {
+    // Keep existing PATH if the shell query fails
+  }
+}
 
 app.whenReady().then(async () => {
   const settings = await readSettings();

@@ -23,7 +23,7 @@ type DevLogEntry =
       exitCode: number | null;
     };
 
-type Toast = { id: number; text: string };
+type Toast = { id: number; text: string; label: string };
 
 const BridgeUnavailable = () => (
   <main className="app-shell">
@@ -124,9 +124,11 @@ const DashboardApp = () => {
           console.log(`[bash:spawn] ${entry.cmd} ${entry.args.join(" ")}`);
         }
         if (entry.type === "spawn:done") {
-          if (entry.stderr) {
+          const toastText = entry.stderr || entry.stdout;
+          if (toastText) {
             const id = ++toastIdRef.current;
-            setToasts((prev) => [...prev, { id, text: entry.stderr }]);
+            const label = entry.stderr ? "stderr" : "stdout";
+            setToasts((prev) => [...prev, { id, text: toastText, label }]);
             setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 5000);
           }
           refreshFast();
@@ -441,7 +443,7 @@ const DashboardApp = () => {
               transition={{ duration: 0.15 }}
               onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
             >
-              <span className="toast-label">stderr</span>
+              <span className="toast-label">{toast.label}</span>
               <pre className="toast-text">{toast.text}</pre>
             </motion.div>
           ))}
