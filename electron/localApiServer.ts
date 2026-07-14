@@ -53,7 +53,7 @@ export const startLocalApiServer = async (
     if (req.method === "GET" && url.pathname === "/api/health") {
       sendJson(res, 200, {
         ok: true,
-        app: "ai-work-command-center",
+        app: "grove",
         version: "1.0.0",
       });
       return;

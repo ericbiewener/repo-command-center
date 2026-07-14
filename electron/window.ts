@@ -88,7 +88,7 @@ export const createDashboardWindow = (options: DashboardWindowOptions = {}) => {
     autoHideMenuBar: true,
     resizable: true,
     alwaysOnTop: options.alwaysOnTop ?? true,
-    title: "AI Workstreams",
+    title: "Grove",
     webPreferences: {
       preload: path.join(__dirname, "../preload/preload.mjs"),
       contextIsolation: true,

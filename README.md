@@ -1,4 +1,4 @@
-# AI Work Command Center
+# Grove
 
 A macOS Electron menu bar app for tracking active AI-assisted coding workstreams. Agents submit structured updates through the `ai-work-status` CLI, and the app renders durable JSON status files from `~/.ai-work-status/`.
 
@@ -29,7 +29,7 @@ To show the dashboard and preselect a specific workstream, post to the local API
 Using the bundled launcher directly:
 
 ```bash
-"/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status" \
+"/Applications/Grove.app/Contents/Resources/bin/ai-work-status" \
   focus \
   --repo /path/to/repo \
   --branch feature-branch
@@ -91,7 +91,7 @@ Useful options:
 After packaging, the launcher is available inside the installed app at:
 
 ```txt
-/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status
+/Applications/Grove.app/Contents/Resources/bin/ai-work-status
 ```
 
 It uses the app's own Electron runtime in Node mode, so it does not depend on `node` being installed separately.
@@ -99,13 +99,13 @@ It uses the app's own Electron runtime in Node mode, so it does not depend on `n
 To focus the running dashboard and select the current repo's active branch with the bundled launcher:
 
 ```bash
-"/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status" focus --repo .
+"/Applications/Grove.app/Contents/Resources/bin/ai-work-status" focus --repo .
 ```
 
 Override the branch explicitly when needed:
 
 ```bash
-"/Applications/AI Work Command Center.app/Contents/Resources/bin/ai-work-status" \
+"/Applications/Grove.app/Contents/Resources/bin/ai-work-status" \
   focus \
   --repo /path/to/repo \
   --branch feature-branch
@@ -203,7 +203,7 @@ Options are read from `~/.ai-work-status/settings.json`.
   "prPollIntervalSeconds": 30,
   "worktreeCreateCommand": "git fetch origin main && git worktree add -b $BRANCH_NAME $WORKTREE_PATH origin/main",
   "claudeCommand": "claude --dangerously-skip-permissions",
-  "notificationClickCommand": "open -a 'AI Work Command Center'",
+  "notificationClickCommand": "open -a 'Grove'",
   "customActions": [
     { "title": "Open Terminal", "icon": "/path/to/terminal.png", "command": "open -a Terminal" }
   ]

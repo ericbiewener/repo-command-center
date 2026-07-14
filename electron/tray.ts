@@ -77,7 +77,7 @@ export const createTray = (toggleWindow: () => void, refresh: () => void) => {
     { label: "Quit", click: () => app.quit() },
   ]);
 
-  tray.setToolTip("AI Workstreams");
+  tray.setToolTip("Grove");
   tray.setContextMenu(menu);
   tray.on("click", toggleWindow);
 

@@ -9,7 +9,7 @@ type HeaderProps = {
 const Header = ({ activeCount, appInfo }: HeaderProps) => (
   <header className="app-header">
     <div>
-      <h1>AI Workstreams</h1>
+      <h1>Grove</h1>
       <p>{activeCount} active</p>
     </div>
     <div className="header-status">

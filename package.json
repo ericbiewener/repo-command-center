@@ -1,5 +1,5 @@
 {
-  "name": "ai-work-command-center",
+  "name": "grove",
   "version": "1.0.0",
   "description": "macOS menu bar command center for AI-assisted coding workstreams.",
   "author": "Eric Biewener",
@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "pnpm build:cli && electron-vite build",
-    "bundle": "pnpm build && electron-builder --mac && ditto \"$(find release -maxdepth 2 -name '*.app' | head -1)\" \"/Applications/AI Work Command Center.app\" && open -a 'AI Work Command Center'",
+    "bundle": "pnpm build && electron-builder --mac && ditto \"$(find release -maxdepth 2 -name '*.app' | head -1)\" \"/Applications/Grove.app\" && open -a 'Grove'",
     "build:cli": "scripts/build-cli.sh",
     "build:cli:watch": "scripts/build-cli.sh --watch",
     "test": "vitest run",
@@ -25,8 +25,8 @@
     "postinstall": "pnpm build:cli"
   },
   "build": {
-    "appId": "com.ebiewener.ai-work-command-center",
-    "productName": "AI Work Command Center",
+    "appId": "com.ebiewener.grove",
+    "productName": "Grove",
     "directories": {
       "output": "release"
     },

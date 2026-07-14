@@ -185,9 +185,7 @@ app.whenReady().then(async () => {
     .then((server) => {
       localApiInfo = server.info;
       closeLocalApi = server.close;
-      console.log(
-        `AI Work Command Center running. Local API: http://127.0.0.1:${server.info.port}`,
-      );
+      console.log(`Grove running. Local API: http://127.0.0.1:${server.info.port}`);
       console.log(
         isDevelopment
           ? "Development mode: dashboard opens automatically. Use the tray icon to toggle it."
