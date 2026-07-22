@@ -70,12 +70,15 @@ export type Workstream = {
   rawStatus: string;
   updatedAt: string;
   updatedAtEpoch: number | null;
+  modifiedAtEpoch: number | null;
   statusFilePath: string;
   isValid: boolean;
   validationErrors: string[];
   gitStatus: { uncommittedCount: number; unpushedCount: number | null } | null;
   prInfo: PrInfo | null;
 };
+
+export type WorkstreamGitInfo = Pick<Workstream, "gitStatus" | "modifiedAtEpoch">;
 
 export type WorkstreamSelectionRequest = {
   statusFilePath?: string;

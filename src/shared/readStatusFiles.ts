@@ -1,8 +1,13 @@
 import fs from "node:fs/promises";
-import { getWorkstreamGitStatus } from "./gitInfo";
+import { getWorkstreamGitInfo } from "./gitInfo";
 import { getStatusReposDir } from "./paths";
 import { normalizeAgent, normalizeStatus } from "./statusNormalization";
-import { generatedStatus, type PersistedStatusRecord, type Workstream } from "./types";
+import {
+  generatedStatus,
+  type PersistedStatusRecord,
+  type Workstream,
+  type WorkstreamGitInfo,
+} from "./types";
 
 const requiredFields = [
   "workstreamId",
@@ -48,6 +53,7 @@ const invalidWorkstream = (statusFilePath: string, validationErrors: string[]): 
   rawStatus: "",
   updatedAt: "",
   updatedAtEpoch: null,
+  modifiedAtEpoch: null,
   statusFilePath,
   isValid: false,
   validationErrors,
@@ -102,6 +108,7 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
           rawStatus: stringValue(data.status),
           updatedAt: rawUpdatedAt,
           updatedAtEpoch,
+          modifiedAtEpoch: null,
           statusFilePath,
           isValid: true,
           validationErrors: [],
@@ -116,21 +123,25 @@ const parseStatusFile = async (statusFilePath: string): Promise<Workstream> => {
 };
 
 export const listWorkstreams = async (
-  knownGitStatuses: Record<string, Workstream["gitStatus"]> = {},
+  knownGitInfo: Record<string, WorkstreamGitInfo> = {},
   statusRoot = getStatusReposDir(),
 ) => {
   const files = await listStatusFiles(statusRoot);
   const parsed = await Promise.all(files.map((file) => parseStatusFile(file)));
-  const withGitStatus = await Promise.all(
-    parsed.map(async (ws) => ({
-      ...ws,
-      gitStatus: ws.isValid
-        ? ws.statusFilePath in knownGitStatuses
-          ? knownGitStatuses[ws.statusFilePath]
-          : await getWorkstreamGitStatus(ws.repoPath)
-        : null,
-    })),
+  const withGitInfo = await Promise.all(
+    parsed.map(async (ws) => {
+      const gitInfo = ws.isValid
+        ? ws.statusFilePath in knownGitInfo
+          ? knownGitInfo[ws.statusFilePath]
+          : await getWorkstreamGitInfo(ws.repoPath)
+        : { gitStatus: null, modifiedAtEpoch: null };
+
+      return { ...ws, ...gitInfo };
+    }),
   );
 
-  return withGitStatus.sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0));
+  return withGitInfo.sort(
+    (a, b) =>
+      (b.modifiedAtEpoch ?? b.updatedAtEpoch ?? 0) - (a.modifiedAtEpoch ?? a.updatedAtEpoch ?? 0),
+  );
 };

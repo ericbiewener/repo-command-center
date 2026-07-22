@@ -1,8 +1,9 @@
 import assert from "node:assert";
 import { execFile } from "node:child_process";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import type { RepoInfo, Workstream } from "./types";
+import type { RepoInfo, WorkstreamGitInfo } from "./types";
 
 const execFileAsync = promisify(execFile);
 
@@ -13,14 +14,53 @@ const git = async (args: string[], cwd: string) => {
 
 const tryGit = async (args: string[], cwd: string) => git(args, cwd).catch(() => "");
 
-export const getWorkstreamGitStatus = async (
-  repoPath: string,
-): Promise<Workstream["gitStatus"]> => {
-  if (!repoPath) return null;
+const splitNullDelimited = (value: string) => value.split("\0").filter(Boolean);
+
+const getPathModifiedAtEpoch = async (repoPath: string, relativePath: string) => {
+  const resolvedRepoPath = path.resolve(repoPath);
+  const resolvedPath = path.resolve(resolvedRepoPath, relativePath);
+  const isInsideRepo =
+    resolvedPath === resolvedRepoPath ||
+    !path.relative(resolvedRepoPath, resolvedPath).startsWith("..");
+
+  if (!isInsideRepo) return 0;
+
+  const statNearestExistingPath = async (candidatePath: string): Promise<number> =>
+    fs
+      .lstat(candidatePath)
+      .then((stats) => stats.mtimeMs)
+      .catch(() =>
+        candidatePath === resolvedRepoPath
+          ? 0
+          : statNearestExistingPath(path.dirname(candidatePath)),
+      );
+
+  return statNearestExistingPath(resolvedPath);
+};
+
+export const getWorkstreamGitInfo = async (repoPath: string): Promise<WorkstreamGitInfo> => {
+  if (!repoPath.trim()) return { gitStatus: null, modifiedAtEpoch: null };
 
   try {
-    const porcelain = await git(["status", "--porcelain"], repoPath);
+    const [porcelain, headTimestamp, changedPaths, untrackedPaths] = await Promise.all([
+      git(["status", "--porcelain"], repoPath),
+      tryGit(["log", "-1", "--format=%ct"], repoPath),
+      tryGit(["diff", "--name-only", "-z", "HEAD"], repoPath),
+      tryGit(["ls-files", "--others", "--exclude-standard", "-z"], repoPath),
+    ]);
     const uncommittedCount = porcelain ? porcelain.split("\n").filter(Boolean).length : 0;
+    const workingTreePaths = [
+      ...splitNullDelimited(changedPaths),
+      ...splitNullDelimited(untrackedPaths),
+    ];
+    const workingTreeModifiedAtEpoch = Math.max(
+      0,
+      ...(await Promise.all(
+        workingTreePaths.map((filePath) => getPathModifiedAtEpoch(repoPath, filePath)),
+      )),
+    );
+    const parsedHeadTimestamp = Number.parseInt(headTimestamp, 10);
+    const headModifiedAtEpoch = Number.isNaN(parsedHeadTimestamp) ? 0 : parsedHeadTimestamp * 1_000;
 
     let unpushedCount: number | null = null;
     try {
@@ -31,11 +71,17 @@ export const getWorkstreamGitStatus = async (
       // No upstream configured — expected for new worktree branches
     }
 
-    return { uncommittedCount, unpushedCount };
+    return {
+      gitStatus: { uncommittedCount, unpushedCount },
+      modifiedAtEpoch: Math.max(headModifiedAtEpoch, workingTreeModifiedAtEpoch) || null,
+    };
   } catch {
-    return null;
+    return { gitStatus: null, modifiedAtEpoch: null };
   }
 };
+
+export const getWorkstreamGitStatus = async (repoPath: string) =>
+  (await getWorkstreamGitInfo(repoPath)).gitStatus;
 
 export const getRepoNameFromRemote = (remote: string) => {
   const withoutGitSuffix = remote

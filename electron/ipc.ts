@@ -3,7 +3,7 @@ import path from "node:path";
 import { ipcMain, shell } from "electron";
 import { listWorkstreams } from "../src/shared/readStatusFiles";
 import { readSettings } from "../src/shared/settings";
-import type { AppInfo, Workstream } from "../src/shared/types";
+import type { AppInfo, Workstream, WorkstreamGitInfo } from "../src/shared/types";
 import { loggedExecFileAsync, loggedSpawn, logSpawn } from "./devLog";
 import { loadIconDataUri } from "./iconCache";
 import type { PrPoller } from "./prPoller";
@@ -15,6 +15,9 @@ const expandEnv = (s: string) =>
 
 type AgentHandle = { process: ReturnType<typeof spawn>; branch: string };
 
+const waitForClose = (child: ReturnType<typeof spawn>) =>
+  new Promise<void>((resolve) => child.once("close", () => resolve()));
+
 type IpcOptions = {
   getAppInfo: () => AppInfo;
   hideWindow: () => void;
@@ -25,11 +28,11 @@ type IpcOptions = {
 
 export const registerIpc = (options: IpcOptions) => {
   ipcMain.handle("workstreams:list", async (_event, rawCache: unknown) => {
-    const knownGitStatuses =
+    const knownGitInfo =
       rawCache !== null && typeof rawCache === "object" && !Array.isArray(rawCache)
-        ? (rawCache as Record<string, Workstream["gitStatus"]>)
+        ? (rawCache as Record<string, WorkstreamGitInfo>)
         : {};
-    const workstreams = await listWorkstreams(knownGitStatuses);
+    const workstreams = await listWorkstreams(knownGitInfo);
     options.cachedWorkstreams.value = workstreams;
     return workstreams.map((ws) => ({
       ...ws,
@@ -117,7 +120,7 @@ export const registerIpc = (options: IpcOptions) => {
       .trim();
     if (!expandedCmd) return { ok: false as const, error: "Empty command." };
     const child = loggedSpawn("sh", ["-c", expandedCmd]);
-    child.unref();
+    await waitForClose(child);
     return { ok: true as const };
   });
 
@@ -135,7 +138,7 @@ export const registerIpc = (options: IpcOptions) => {
         .trim();
       if (!expandedCmd) return { ok: false as const, error: "Empty command." };
       const child = loggedSpawn("sh", ["-c", expandedCmd]);
-      child.unref();
+      await waitForClose(child);
       return { ok: true as const };
     },
   );

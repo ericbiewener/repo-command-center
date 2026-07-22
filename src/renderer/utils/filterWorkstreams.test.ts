@@ -14,6 +14,7 @@ const makeWorkstream = (overrides: Partial<Workstream> = {}) =>
     rawStatus: "running",
     updatedAt: "2026-06-03T16:48:22.866Z",
     updatedAtEpoch: 1_780_506_502_866,
+    modifiedAtEpoch: 1_780_506_502_866,
     statusFilePath:
       "/Users/eric/.ai-work-status/repos/command-center--aaaaaaaaaa/branches/main.json",
     isValid: true,

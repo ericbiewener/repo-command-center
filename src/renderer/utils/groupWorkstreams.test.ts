@@ -14,6 +14,7 @@ const makeWorkstream = (overrides: Partial<Workstream> = {}) =>
     rawStatus: "running",
     updatedAt: "2026-06-03T16:48:22.866Z",
     updatedAtEpoch: 1_780_506_502_866,
+    modifiedAtEpoch: 1_780_506_502_866,
     statusFilePath:
       "/Users/eric/.ai-work-status/repos/command-center--aaaaaaaaaa/branches/main.json",
     isValid: true,
@@ -76,5 +77,18 @@ describe("groupWorkstreams", () => {
     ]);
 
     expect(groups).toHaveLength(1);
+  });
+
+  test("orders rows by repository modification time", () => {
+    const older = makeWorkstream({ modifiedAtEpoch: 100 });
+    const newer = makeWorkstream({
+      id: "command-center__feature",
+      branch: "feature",
+      modifiedAtEpoch: 200,
+      statusFilePath:
+        "/Users/eric/.ai-work-status/repos/command-center--aaaaaaaaaa/branches/feature.json",
+    });
+
+    expect(groupWorkstreams([older, newer])[0]?.items).toEqual([newer, older]);
   });
 });

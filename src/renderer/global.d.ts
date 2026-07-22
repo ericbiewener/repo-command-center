@@ -1,12 +1,15 @@
 import type { ResolvedCustomAction } from "../shared/settings";
-import type { AppInfo, DashboardFocusRequest, Workstream } from "../shared/types";
+import type {
+  AppInfo,
+  DashboardFocusRequest,
+  Workstream,
+  WorkstreamGitInfo,
+} from "../shared/types";
 
 declare global {
   interface Window {
     appApi: {
-      listWorkstreams: (
-        gitStatusCache?: Record<string, Workstream["gitStatus"]>,
-      ) => Promise<Workstream[]>;
+      listWorkstreams: (gitInfoCache?: Record<string, WorkstreamGitInfo>) => Promise<Workstream[]>;
       getAppInfo: () => Promise<AppInfo>;
       hideWindow: () => Promise<{ ok: true }>;
       getCustomActions: () => Promise<ResolvedCustomAction[]>;

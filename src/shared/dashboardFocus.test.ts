@@ -17,6 +17,7 @@ const makeWorkstream = (overrides: Partial<Workstream>): Workstream => ({
   rawStatus: "done",
   updatedAt: "2026-06-28T12:00:00.000Z",
   updatedAtEpoch: Date.parse("2026-06-28T12:00:00.000Z"),
+  modifiedAtEpoch: Date.parse("2026-06-28T12:00:00.000Z"),
   statusFilePath: "/tmp/status/feature-1.json",
   isValid: true,
   validationErrors: [],

@@ -54,10 +54,16 @@ export const groupWorkstreams = (workstreams: Workstream[]) => {
     repo.branches[branchIndex].items.push(workstream);
   });
 
-  const maxEpoch = (items: { updatedAtEpoch: number | null }[]) =>
-    items.reduce((acc, w) => Math.max(acc, w.updatedAtEpoch ?? 0), 0);
+  const modifiedAtEpoch = (workstream: Workstream) =>
+    workstream.modifiedAtEpoch ?? workstream.updatedAtEpoch ?? 0;
+  const maxEpoch = (items: Workstream[]) =>
+    items.reduce((acc, workstream) => Math.max(acc, modifiedAtEpoch(workstream)), 0);
 
   for (const repo of repos) {
+    repo.items.sort((a, b) => modifiedAtEpoch(b) - modifiedAtEpoch(a));
+    for (const branch of repo.branches) {
+      branch.items.sort((a, b) => modifiedAtEpoch(b) - modifiedAtEpoch(a));
+    }
     repo.branches.sort((a, b) => maxEpoch(b.items) - maxEpoch(a.items));
   }
 

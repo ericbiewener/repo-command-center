@@ -3,7 +3,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { resolveSelectedStatusFilePath } from "../shared/dashboardFocus";
 import type { ResolvedCustomAction } from "../shared/settings";
-import type { AppInfo, DashboardFocusRequest, Workstream } from "../shared/types";
+import type {
+  AppInfo,
+  DashboardFocusRequest,
+  Workstream,
+  WorkstreamGitInfo,
+} from "../shared/types";
 import EmptyState from "./components/EmptyState";
 import ErrorPanel from "./components/ErrorPanel";
 import WorkstreamTable from "./components/WorkstreamTable";
@@ -68,10 +73,13 @@ const DashboardApp = () => {
   workstreamsRef.current = workstreams;
 
   const refreshFast = useCallback(() => {
-    const gitStatusCache = Object.fromEntries(
-      workstreamsRef.current.map((ws) => [ws.statusFilePath, ws.gitStatus]),
+    const gitInfoCache: Record<string, WorkstreamGitInfo> = Object.fromEntries(
+      workstreamsRef.current.map((ws) => [
+        ws.statusFilePath,
+        { gitStatus: ws.gitStatus, modifiedAtEpoch: ws.modifiedAtEpoch },
+      ]),
     );
-    void window.appApi.listWorkstreams(gitStatusCache).then(setWorkstreams);
+    void window.appApi.listWorkstreams(gitInfoCache).then(setWorkstreams);
   }, []);
   // Track selected item by statusFilePath so it survives filter changes gracefully
   const [anchorPath, setAnchorPath] = useState<string | null>(null);
@@ -200,7 +208,11 @@ const DashboardApp = () => {
   const sortedWorkstreams = useMemo(
     () =>
       unified
-        ? [...filteredWorkstreams].sort((a, b) => (b.updatedAtEpoch ?? 0) - (a.updatedAtEpoch ?? 0))
+        ? [...filteredWorkstreams].sort(
+            (a, b) =>
+              (b.modifiedAtEpoch ?? b.updatedAtEpoch ?? 0) -
+              (a.modifiedAtEpoch ?? a.updatedAtEpoch ?? 0),
+          )
         : [],
     [filteredWorkstreams, unified],
   );
@@ -234,12 +246,11 @@ const DashboardApp = () => {
       setPendingStatusFilePaths((prev) => ({ ...prev, [workstream.statusFilePath]: true }));
       try {
         await action();
-        refreshFast();
       } finally {
         setPendingStatusFilePaths((prev) => ({ ...prev, [workstream.statusFilePath]: false }));
       }
     },
-    [pendingStatusFilePaths, refreshFast],
+    [pendingStatusFilePaths],
   );
 
   const handleSelect = useCallback(
