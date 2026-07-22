@@ -45,6 +45,11 @@ const WorkstreamCard = ({
   const { gitStatus, prInfo } = workstream;
   const hasPr = prInfo !== null && !("fetchError" in prInfo);
   const prFetchError = prInfo !== null && "fetchError" in prInfo;
+  const runDefaultAction = () =>
+    !isPending &&
+    void onAction(workstream, () =>
+      window.appApi.executeAction(workstream.repoPath, workstream.branch),
+    );
 
   return (
     <motion.tr
@@ -53,7 +58,11 @@ const WorkstreamCard = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: isPending ? 0.7 : isHidden ? 0.38 : 1 }}
       transition={{ duration: 0.2 }}
-      onClick={() => onSelect(workstream)}
+      onClick={(event) =>
+        event.target instanceof Element && event.target.closest("button")
+          ? undefined
+          : runDefaultAction()
+      }
       onMouseEnter={() => onSelect(workstream)}
     >
       {showRepo ? (
@@ -135,12 +144,7 @@ const WorkstreamCard = ({
             className="action-bar-btn"
             title="Default action"
             disabled={isPending}
-            onClick={() =>
-              !isPending &&
-              void onAction(workstream, () =>
-                window.appApi.executeAction(workstream.repoPath, workstream.branch),
-              )
-            }
+            onClick={runDefaultAction}
           >
             <CornerDownLeft size={13} />
             <span className="action-key">Enter</span>
